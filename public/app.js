@@ -3514,13 +3514,20 @@ function openAuthModal(mode = 'login', requiredGate = false) {
   `;
 }
 
+const DEFAULT_GOOGLE_CLIENT_ID = '324819070960-vdpa542cusb5tq68p9mgm67hrncoi209.apps.googleusercontent.com';
+
 async function startGoogleSignIn(requiredGate = false) {
+  let clientId = DEFAULT_GOOGLE_CLIENT_ID;
   try {
     const cfgRes = await fetch('/api/auth/google-config');
     const cfg = await cfgRes.json();
-    if (cfg.googleClientId && window.google?.accounts?.oauth2) {
+    if (cfg && cfg.googleClientId) clientId = cfg.googleClientId;
+  } catch (_) {}
+
+  if (clientId && window.google?.accounts?.oauth2) {
+    try {
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: cfg.googleClientId,
+        client_id: clientId,
         scope: 'openid email profile',
         callback: async (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
@@ -3540,10 +3547,10 @@ async function startGoogleSignIn(requiredGate = false) {
       });
       tokenClient.requestAccessToken({ prompt: 'select_account' });
       return;
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
 
-  // Open centered Google Accounts Sign-In Popup Window
+  // Fallback centered Google Accounts Sign-In Popup Window (e.g. if GIS script is still loading or on localhost)
   const w = 460, h = 590;
   const left = Math.max(0, Math.round((window.screen.width - w) / 2));
   const top = Math.max(0, Math.round((window.screen.height - h) / 2));

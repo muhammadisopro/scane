@@ -66,7 +66,8 @@ let platformDb = {
     }
   ],
   sessions: {}, // token -> userId
-  reports: []   // { id, videoId, mediaId, title, reason, details, userEmail, status, createdAt, suggestedAlt }
+  reports: [],  // { id, videoId, mediaId, title, reason, details, userEmail, status, createdAt, suggestedAlt }
+  googleClientId: '324819070960-vdpa542cusb5tq68p9mgm67hrncoi209.apps.googleusercontent.com'
 };
 
 function loadPlatformDb() {
@@ -1431,7 +1432,7 @@ const requestHandler = async (req, res) => {
 
   if (pathname === '/api/auth/google-config') {
     return sendJson(res, 200, {
-      googleClientId: process.env.GOOGLE_CLIENT_ID || platformDb.googleClientId || ''
+      googleClientId: process.env.GOOGLE_CLIENT_ID || platformDb.googleClientId || '324819070960-vdpa542cusb5tq68p9mgm67hrncoi209.apps.googleusercontent.com'
     });
   }
 
