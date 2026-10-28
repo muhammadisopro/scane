@@ -1430,6 +1430,11 @@ const requestHandler = async (req, res) => {
 </html>`);
   }
 
+  if (pathname === '/privacy' || pathname === '/terms') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${pathname === '/privacy' ? 'Privacy Policy' : 'Terms of Service'} — SCANE</title><style>body{background:#090b10;color:#f1f5f9;font-family:system-ui,sans-serif;max-width:720px;margin:48px auto;padding:0 24px;line-height:1.6}h1{color:#fff}a{color:#38bdf8}</style></head><body><h1>SCANE ${pathname === '/privacy' ? 'Privacy Policy' : 'Terms of Service'}</h1><p>SCANE uses your Google Account name and email address solely to authenticate your profile, synchronize your watchlist, and save your interactive English vocabulary progress.</p><p>We never sell or share your personal data with third parties.</p><p><a href="/">← Back to SCANE</a></p></body></html>`);
+  }
+
   if (pathname === '/api/auth/google-config') {
     return sendJson(res, 200, {
       googleClientId: process.env.GOOGLE_CLIENT_ID || platformDb.googleClientId || '324819070960-vdpa542cusb5tq68p9mgm67hrncoi209.apps.googleusercontent.com'
