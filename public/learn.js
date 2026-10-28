@@ -841,6 +841,19 @@ async function openContextualWordPopup(word, cueIdx) {
     const info = await api(`/api/learn/lookup?word=${encodeURIComponent(word)}&sentence=${encodeURIComponent(cue.text || '')}&userId=${encodeURIComponent(getLearnUserId())}`);
     speakEnglishText(info.word);
 
+    let uzMeaning = info.uzMeaning || '';
+    if (!uzMeaning || uzMeaning.toLowerCase() === (info.word || '').toLowerCase()) {
+      try {
+        const mmRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(info.word || word)}&langpair=en|uz`);
+        const mmData = await mmRes.json();
+        if (mmData?.responseData?.translatedText) {
+          uzMeaning = mmData.responseData.translatedText;
+        }
+      } catch (_) {}
+    }
+
+    const contextUz = info.contextUz && info.contextUz.toLowerCase() !== (cue.text || '').toLowerCase() ? info.contextUz : '';
+
     pop.innerHTML = `
       <div class="se-wp-head">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -851,7 +864,7 @@ async function openContextualWordPopup(word, cueIdx) {
         <button class="se-wp-close" onclick="closeWordPopup()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="se-wp-body">
-        <div class="se-wp-uz">${esc(info.uzMeaning)}</div>
+        <div class="se-wp-uz">${esc(uzMeaning || info.word)}</div>
         <div class="se-wp-meta">
           <span>${esc(info.pos || 'word')}</span>
           ${info.cefr ? `<span class="se-cefr-badge cefr-${info.cefr.toLowerCase()}">${esc(info.cefr)}</span>` : ''}
@@ -863,9 +876,16 @@ async function openContextualWordPopup(word, cueIdx) {
         ` : ''}
         ${cue.text ? `
           <div class="se-wp-sent-wrap" id="seWpSentWrap">
-            <button class="se-wp-sent-btn" onclick="translateCurrentPopupSentence()">
-              <i class="fa-solid fa-language"></i> Translate Full Sentence
-            </button>
+            ${contextUz ? `
+              <div class="se-wp-sent-box">
+                <div class="se-wp-sent-en">"${esc(cue.text)}"</div>
+                <div class="se-wp-sent-uz">${esc(contextUz)}</div>
+              </div>
+            ` : `
+              <button class="se-wp-sent-btn" onclick="translateCurrentPopupSentence()">
+                <i class="fa-solid fa-language"></i> Translate Full Sentence
+              </button>
+            `}
           </div>
         ` : ''}
       </div>

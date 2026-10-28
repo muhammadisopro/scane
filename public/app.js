@@ -1807,21 +1807,16 @@ async function lookupWord(word) {
   if (!pop) return;
   if (PV.vid && !PV.vid.paused) PV.vid.pause();
   pop.style.display = 'block';
-  pop.innerHTML = `<div class="dict-head"><strong>${esc(word)}</strong><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body">Looking up definition...</div>`;
+  pop.innerHTML = `<div class="dict-head"><strong>${esc(word)}</strong><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body">Translating...</div>`;
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
-    const data = await res.json();
-    if (!Array.isArray(data) || !data[0]) throw new Error('No entry');
-    const entry = data[0];
-    const phonetic = entry.phonetic || (entry.phonetics?.find(p => p.text)?.text) || '';
-    const meanings = (entry.meanings || []).slice(0, 2).map(m => {
-      const def = m.definitions?.[0]?.definition || '';
-      const ex = m.definitions?.[0]?.example || '';
-      return `<div class="dict-meaning"><span class="dict-pos">${esc(m.partOfSpeech)}</span> ${esc(def)}${ex ? `<div class="dict-ex">"${esc(ex)}"</div>` : ''}</div>`;
-    }).join('');
-    pop.innerHTML = `<div class="dict-head"><div><strong>${esc(entry.word)}</strong> <span class="dict-phon">${esc(phonetic)}</span></div><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body">${meanings}</div>`;
+    const infoRes = await fetch(`/api/learn/lookup?word=${encodeURIComponent(word)}`);
+    const info = await infoRes.json();
+    const uzMeaning = info?.uzMeaning || '';
+    const phonetic = info?.ipa || '';
+    const pos = info?.pos || 'word';
+    pop.innerHTML = `<div class="dict-head"><div><strong>${esc(info?.word || word)}</strong> ${phonetic ? `<span class="dict-phon">${esc(phonetic)}</span>` : ''}</div><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body"><div class="dict-meaning" style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">${esc(uzMeaning || word)}</div><div class="dict-meaning"><span class="dict-pos">${esc(pos)}</span> ${esc(info?.cefr || '')}</div></div>`;
   } catch (e) {
-    pop.innerHTML = `<div class="dict-head"><strong>${esc(word)}</strong><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body">No dictionary definition found for "${esc(word)}".</div>`;
+    pop.innerHTML = `<div class="dict-head"><strong>${esc(word)}</strong><button onclick="document.getElementById('dictPopup').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div><div class="dict-body">Translation unavailable for "${esc(word)}".</div>`;
   }
 }
 

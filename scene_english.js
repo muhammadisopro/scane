@@ -544,9 +544,17 @@ function detectPhrasesInSentence(sentence) {
 
 function getHttpsText(urlStr, timeoutMs = 6000) {
   return new Promise((resolve, reject) => {
-    const req = https.get(urlStr, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*'
+    };
+    const req = https.get(urlStr, { headers }, res => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return getHttpsText(res.headers.location, timeoutMs).then(resolve, reject);
+      }
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`HTTP ${res.statusCode}`));
       }
       let data = '';
       res.on('data', chunk => data += chunk);
@@ -557,24 +565,64 @@ function getHttpsText(urlStr, timeoutMs = 6000) {
   });
 }
 
+// Multi-Engine Free English -> Uzbek Translator & Dictionary Cascade
+async function translateEnToUzWithDict(text) {
+  const clean = String(text || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  if (!clean) return { uz: '', synonyms: [], pos: '' };
+
+  // Engine 1: Google Android Dictionary API (client=at&dt=t&dt=bd&dj=1) -> Returns translation + Uzbek dictionary synonyms!
+  try {
+    const u1 = `https://translate.google.com/translate_a/single?client=at&dt=t&dt=bd&dj=1&sl=en&tl=uz&q=${encodeURIComponent(clean)}`;
+    const raw1 = await getHttpsText(u1, 4500);
+    const j1 = JSON.parse(raw1);
+    const trans = (j1.sentences || []).map(s => s.trans || '').join('').trim();
+    const dictEntry = Array.isArray(j1.dict) && j1.dict[0] ? j1.dict[0] : null;
+    const synonyms = dictEntry && Array.isArray(dictEntry.terms) ? dictEntry.terms.slice(0, 5) : [];
+    const pos = dictEntry && dictEntry.pos ? dictEntry.pos : '';
+    if (trans) {
+      transCache[clean] = trans;
+      saveTransCache();
+      return { uz: trans, synonyms, pos };
+    }
+  } catch (e) {}
+
+  // Engine 2: Chrome Extension Dictionary API (clients5.google.com/translate_a/t?client=dict-chrome-ex)
+  try {
+    const u2 = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=uz&q=${encodeURIComponent(clean)}`;
+    const raw2 = await getHttpsText(u2, 4500);
+    const j2 = JSON.parse(raw2);
+    const trans = Array.isArray(j2) ? (typeof j2[0] === 'string' ? j2[0] : (j2[0] && j2[0][0] ? j2[0][0] : '')) : '';
+    if (trans) {
+      transCache[clean] = trans.trim();
+      saveTransCache();
+      return { uz: trans.trim(), synonyms: [], pos: '' };
+    }
+  } catch (e) {}
+
+  // Engine 3: MyMemory Free Translation API (api.mymemory.translated.net)
+  try {
+    const u3 = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|uz`;
+    const raw3 = await getHttpsText(u3, 5000);
+    const j3 = JSON.parse(raw3);
+    const trans = j3?.responseData?.translatedText || '';
+    if (trans && !/MYMEMORY WARNING/i.test(trans)) {
+      transCache[clean] = trans.trim();
+      saveTransCache();
+      return { uz: trans.trim(), synonyms: [], pos: '' };
+    }
+  } catch (e) {}
+
+  return { uz: transCache[clean] || '', synonyms: [], pos: '' };
+}
+
 async function translateEnToUz(text) {
   const clean = String(text || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   if (!clean) return '';
-  if (transCache[clean]) return transCache[clean];
-  try {
-    const u = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=uz&dt=t&q=${encodeURIComponent(clean)}`;
-    const raw = await getHttpsText(u, 5000);
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
-      const uz = parsed[0].map(seg => seg && seg[0] ? seg[0] : '').join('').trim();
-      if (uz) {
-        transCache[clean] = uz;
-        saveTransCache();
-        return uz;
-      }
-    }
-  } catch (e) {}
-  return '';
+  if (transCache[clean] && transCache[clean].toLowerCase() !== clean.toLowerCase()) {
+    return transCache[clean];
+  }
+  const res = await translateEnToUzWithDict(clean);
+  return res.uz || '';
 }
 
 async function translateBatchCues(cues = []) {
@@ -583,32 +631,27 @@ async function translateBatchCues(cues = []) {
   for (const c of cues) {
     const clean = String(c.text || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
     if (!clean) continue;
-    if (transCache[clean]) {
+    if (transCache[clean] && transCache[clean].toLowerCase() !== clean.toLowerCase()) {
       results[c.index] = transCache[clean];
     } else {
       missing.push({ index: c.index, text: clean });
     }
   }
-  // Batch in chunks of 12 lines separated by newline so a single HTTP request translates 12 lines at once
-  for (let i = 0; i < missing.length; i += 12) {
-    const slice = missing.slice(i, i + 12);
+  // Batch in chunks of 10 lines separated by newline
+  for (let i = 0; i < missing.length; i += 10) {
+    const slice = missing.slice(i, i + 10);
     const joined = slice.map(x => x.text).join('\n');
-    try {
-      const u = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=uz&dt=t&q=${encodeURIComponent(joined)}`;
-      const raw = await getHttpsText(u, 6500);
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
-        const fullTranslated = parsed[0].map(seg => seg && seg[0] ? seg[0] : '').join('');
-        const lines = fullTranslated.split('\n');
-        slice.forEach((item, idx) => {
-          const trLine = (lines[idx] || '').trim();
-          if (trLine) {
-            transCache[item.text] = trLine;
-            results[item.index] = trLine;
-          }
-        });
-      }
-    } catch (e) {}
+    const tr = await translateEnToUzWithDict(joined);
+    if (tr.uz) {
+      const lines = tr.uz.split('\n');
+      slice.forEach((item, idx) => {
+        const trLine = (lines[idx] || '').trim();
+        if (trLine) {
+          transCache[item.text] = trLine;
+          results[item.index] = trLine;
+        }
+      });
+    }
   }
   if (missing.length) saveTransCache();
   return results;
@@ -634,46 +677,67 @@ async function lookupContextualWord({ word, sentence = '', userId = 'default' })
   let enDefinition = '';
   let example = curated?.example || '';
 
-  // 2. Query Free Dictionary API for IPA, audio pronunciation, POS, and English example
-  if (!isPhrase && baseLemma.length >= 2) {
-    try {
-      const raw = await getHttpsText(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(baseLemma)}`, 4000);
-      const data = JSON.parse(raw);
-      if (Array.isArray(data) && data[0]) {
-        const entry = data[0];
-        if (!ipa) ipa = entry.phonetic || (entry.phonetics?.find(p => p.text)?.text) || '';
-        audioUrl = entry.phonetics?.find(p => p.audio)?.audio || '';
-        const m0 = entry.meanings?.[0];
-        if (m0) {
-          const posMap = {
-            noun: 'Noun (Ot)',
-            verb: 'Verb (Fe’l)',
-            adjective: 'Adjective (Sifat)',
-            adverb: 'Adverb (Ravish)',
-            pronoun: 'Pronoun (Olmosh)',
-            preposition: 'Preposition (Predlog)',
-            conjunction: 'Conjunction (Bog‘lovchi)',
-            interjection: 'Interjection (Undov)'
-          };
-          if (!curated?.pos) pos = posMap[m0.partOfSpeech?.toLowerCase()] || m0.partOfSpeech;
-          enDefinition = m0.definitions?.[0]?.definition || '';
-          if (!example) example = m0.definitions?.[0]?.example || '';
-        }
-      }
-    } catch (e) {}
-  }
+  const posMap = {
+    noun: 'Noun (Ot)',
+    verb: 'Verb (Fe’l)',
+    adjective: 'Adjective (Sifat)',
+    adverb: 'Adverb (Ravish)',
+    pronoun: 'Pronoun (Olmosh)',
+    preposition: 'Preposition (Predlog)',
+    conjunction: 'Conjunction (Bog‘lovchi)',
+    interjection: 'Interjection (Undov)'
+  };
 
-  // 3. Get contextual Uzbek translation of the word and the full subtitle sentence
-  const [uzWord, uzSentence, uzDef] = await Promise.all([
-    curated ? Promise.resolve(curated.uz) : (matchingIdiom && matchingIdiom.phrase === lowInput ? Promise.resolve(matchingIdiom.uz) : translateEnToUz(rawInput)),
-    sentence ? translateEnToUz(sentence) : Promise.resolve(''),
-    enDefinition && !curated ? translateEnToUz(enDefinition) : Promise.resolve('')
+  // 2. Query Free Dictionary API + Multi-Engine Uzbek Dictionary in parallel
+  const [dictApiRes, wordRichRes, lemmaRichRes, uzSentence] = await Promise.all([
+    (!isPhrase && baseLemma.length >= 2)
+      ? getHttpsText(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(baseLemma)}`, 3500).then(r => JSON.parse(r)).catch(() => null)
+      : Promise.resolve(null),
+    curated
+      ? Promise.resolve({ uz: curated.uz, synonyms: [], pos: curated.pos })
+      : (matchingIdiom && matchingIdiom.phrase === lowInput
+          ? Promise.resolve({ uz: matchingIdiom.uz, synonyms: [], pos: matchingIdiom.pos })
+          : translateEnToUzWithDict(rawInput)),
+    (!curated && !isPhrase && baseLemma !== lowInput)
+      ? translateEnToUzWithDict(baseLemma)
+      : Promise.resolve(null),
+    sentence ? translateEnToUz(sentence) : Promise.resolve('')
   ]);
 
-  const uzMeaning = uzWord || curated?.uz || rawInput;
+  if (Array.isArray(dictApiRes) && dictApiRes[0]) {
+    const entry = dictApiRes[0];
+    if (!ipa) ipa = entry.phonetic || (entry.phonetics?.find(p => p.text)?.text) || '';
+    audioUrl = entry.phonetics?.find(p => p.audio)?.audio || '';
+    const m0 = entry.meanings?.[0];
+    if (m0) {
+      if (!curated?.pos) pos = posMap[m0.partOfSpeech?.toLowerCase()] || m0.partOfSpeech;
+      enDefinition = m0.definitions?.[0]?.definition || '';
+      if (!example) example = m0.definitions?.[0]?.example || '';
+    }
+  }
+
+  if (pos === 'Word' && wordRichRes?.pos) {
+    pos = posMap[wordRichRes.pos.toLowerCase()] || wordRichRes.pos;
+  }
+
+  // Combine primary meaning + dictionary synonyms so the user gets a rich Uzbek dictionary translation!
+  const allSynonyms = [
+    ...(wordRichRes?.synonyms || []),
+    ...(lemmaRichRes?.synonyms || [])
+  ].filter((v, idx, arr) => v && v.toLowerCase() !== rawInput.toLowerCase() && arr.indexOf(v) === idx);
+
+  let primaryUz = wordRichRes?.uz || lemmaRichRes?.uz || curated?.uz || '';
+  if (allSynonyms.length > 0) {
+    const topSyns = allSynonyms.filter(s => s.toLowerCase() !== primaryUz.toLowerCase()).slice(0, 3);
+    if (topSyns.length > 0) {
+      primaryUz = primaryUz ? `${primaryUz} (${topSyns.join(', ')})` : topSyns.join(', ');
+    }
+  }
+
+  const uzMeaning = primaryUz || rawInput;
   const uzExplanation = curated?.explain
     || (matchingIdiom ? `Bu sahnada "${matchingIdiom.phrase}" birikmasi "${matchingIdiom.uz}" ma’nosida qo‘llangan. ${matchingIdiom.explain}` : '')
-    || (uzDef ? `${uzDef}.${uzSentence ? ` Sahna tarjimasi: "${uzSentence}"` : ''}` : (uzSentence ? `Ushbu sahnadagi gap kontekstida: "${uzSentence}"` : `"${rawInput}" so‘zining o‘zbekcha ma’nosi: ${uzMeaning}.`));
+    || (uzSentence ? `Sahna tarjimasi: "${uzSentence}"` : `"${rawInput}" so‘zining o‘zbekcha ma’nosi: ${uzMeaning}.`);
 
   if (!example) {
     example = sentence || `Can you explain what "${rawInput}" means in this scene?`;
