@@ -824,13 +824,13 @@ function saveUserVocab(userId, payload) {
 function updateVocabStatus(userId, vocabId, status) {
   const entry = db.vocabulary.find(v => v.userId === userId && (v.id === vocabId || v.lemma === vocabId));
   if (!entry) return null;
-  if (['red', 'yellow', 'green'].includes(status)) {
-    entry.status = status;
-    if (status === 'green' && entry.reps < 1) {
-      entry.reps = 1;
-      entry.intervalDays = 4;
-      entry.nextReviewAt = new Date(Date.now() + 4 * 86400000).toISOString();
-    } else if (status === 'red') {
+  if (['red', 'yellow', 'blue', 'white', 'green'].includes(status)) {
+    entry.status = status === 'green' ? 'white' : status;
+    if (entry.status === 'white') entry.reps = Math.max(3, entry.reps || 3);
+    else if (entry.status === 'blue') entry.reps = 2;
+    else if (entry.status === 'yellow') entry.reps = 1;
+    else if (entry.status === 'red') {
+      entry.reps = 0;
       entry.nextReviewAt = new Date().toISOString();
     }
     entry.updatedAt = new Date().toISOString();
@@ -877,30 +877,27 @@ function submitVocabReview(userId, { vocabId, rating, reviewFormat = 'flashcard'
 
   let nextIntervalDays = 0;
   if (r === 1) {
-    // Forgot -> Lapse
+    // Wrong / Forgot -> reset to Red (0/3)
     card.lapses = (card.lapses || 0) + 1;
+    card.reps = Math.max(0, (card.reps || 0) - 1);
     card.stability = Math.max(0.25, prevS * 0.4);
-    nextIntervalDays = 0; // Due again today
-    card.status = 'red';
-  } else if (r === 2) {
-    // Hard
-    card.reps = (card.reps || 0) + 1;
-    card.stability = Math.max(0.8, prevS * 1.3);
-    nextIntervalDays = Math.max(1, Math.round(card.stability));
-    card.status = 'yellow';
-  } else if (r === 3) {
-    // Good
-    card.reps = (card.reps || 0) + 1;
-    card.stability = card.reps === 1 ? 2.0 : prevS * (2.2 - card.difficulty * 0.08);
-    nextIntervalDays = Math.max(1, Math.round(card.stability));
-    card.status = card.reps >= 2 ? 'green' : 'yellow';
+    nextIntervalDays = 0;
   } else {
-    // Easy (4)
+    // Correct answer -> increment mastery stage (0 -> 1 -> 2 -> 3)
     card.reps = (card.reps || 0) + 1;
-    card.stability = card.reps === 1 ? 4.0 : prevS * (2.9 - card.difficulty * 0.08);
-    nextIntervalDays = Math.max(3, Math.round(card.stability));
-    card.status = card.reps >= 2 ? 'green' : 'yellow';
+    card.stability = card.reps === 1 ? 1.5 : prevS * 2.0;
+    nextIntervalDays = Math.max(1, Math.round(card.stability));
   }
+
+  // 4-Stage Color Mastery Progression:
+  // 0 reps -> 'red' (🔴 New)
+  // 1 rep  -> 'yellow' (🟡 Learning)
+  // 2 reps -> 'blue' (🔵 Almost Mastered)
+  // 3+ reps -> 'white' (⚪ Mastered / Default White)
+  if ((card.reps || 0) <= 0) card.status = 'red';
+  else if (card.reps === 1) card.status = 'yellow';
+  else if (card.reps === 2) card.status = 'blue';
+  else card.status = 'white';
 
   card.intervalDays = nextIntervalDays;
   card.lastReviewedAt = now.toISOString();

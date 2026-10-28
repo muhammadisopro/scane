@@ -1342,6 +1342,93 @@ const requestHandler = async (req, res) => {
     return sendJson(res, 200, { user: sanitizeUser(user) });
   }
 
+  if (pathname === '/google-oauth-window') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in - Google Accounts</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Google Sans',Roboto,Arial,sans-serif}
+  body{background:#fff;color:#202124;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+  .g-card{width:100%;max-width:400px;border:1px solid #dadce0;border-radius:8px;padding:36px 32px 28px}
+  .g-logo{display:flex;justify-content:center;margin-bottom:14px}
+  h1{font-size:24px;font-weight:400;text-align:center;margin-bottom:8px;color:#202124}
+  .sub{font-size:16px;text-align:center;color:#202124;margin-bottom:24px}
+  .sub strong{color:#1a73e8;font-weight:500}
+  .saved-list{margin-bottom:18px;border-top:1px solid #e8eaed}
+  .saved-item{display:flex;align-items:center;gap:12px;padding:12px 6px;border-bottom:1px solid #e8eaed;cursor:pointer;transition:background .15s}
+  .saved-item:hover{background:#f8f9fa}
+  .av{width:36px;height:36px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:15px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12px;color:#5f6368;margin-bottom:5px;font-weight:500}
+  .field input{width:100%;padding:13px 14px;border:1px solid #dadce0;border-radius:4px;font-size:15px;color:#202124;outline:none}
+  .field input:focus{border-color:#1a73e8;box-shadow:0 0 0 1px #1a73e8}
+  .actions{display:flex;align-items:center;justify-content:space-between;margin-top:26px}
+  .btn-cancel{background:none;border:none;color:#1a73e8;font-weight:500;font-size:14px;cursor:pointer;padding:8px 12px;border-radius:4px}
+  .btn-next{background:#1a73e8;color:#fff;border:none;padding:10px 24px;border-radius:4px;font-weight:500;font-size:14px;cursor:pointer}
+  .btn-next:hover{background:#1557b0}
+  .foot{font-size:12px;color:#5f6368;margin-top:24px;line-height:1.5}
+</style>
+</head>
+<body>
+  <div class="g-card">
+    <div class="g-logo">
+      <svg viewBox="0 0 24 24" width="40" height="40"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    </div>
+    <h1>Sign in with Google</h1>
+    <div class="sub">to continue to <strong>SCANE</strong></div>
+    <div id="savedBox" class="saved-list" style="display:none"></div>
+    <form id="gForm">
+      <div class="field">
+        <label>Email or Gmail address</label>
+        <input type="email" id="gEmail" placeholder="yourname@gmail.com" required autofocus>
+      </div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="gName" placeholder="Your Name" required>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-cancel" onclick="window.close()">Cancel</button>
+        <button type="submit" class="btn-next">Continue</button>
+      </div>
+    </form>
+    <div class="foot">To continue, Google will share your name, email address, and profile picture with SCANE.</div>
+  </div>
+  <script>
+    try {
+      const saved = JSON.parse(localStorage.getItem('scane_google_accounts') || '[]');
+      if (saved.length) {
+        const box = document.getElementById('savedBox');
+        box.style.display = 'block';
+        box.innerHTML = saved.map(a => \`
+          <div class="saved-item" onclick="pickAccount('\${a.email.replace(/'/g,'')}', '\${(a.name||'').replace(/'/g,'')}')">
+            <div class="av">\${(a.name || a.email || 'G')[0].toUpperCase()}</div>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:#202124">\${a.name}</div>
+              <div style="font-size:12px;color:#5f6368">\${a.email}</div>
+            </div>
+          </div>
+        \`).join('');
+      }
+    } catch(e){}
+    function pickAccount(email, name) {
+      if (window.opener) {
+        window.opener.postMessage({ type: 'SCANE_GOOGLE_AUTH', email, name }, '*');
+      }
+      window.close();
+    }
+    document.getElementById('gForm').addEventListener('submit', e => {
+      e.preventDefault();
+      pickAccount(document.getElementById('gEmail').value.trim(), document.getElementById('gName').value.trim());
+    });
+  </script>
+</body>
+</html>`);
+  }
+
   if (pathname === '/api/auth/google-config') {
     return sendJson(res, 200, {
       googleClientId: process.env.GOOGLE_CLIENT_ID || platformDb.googleClientId || ''
@@ -1361,6 +1448,22 @@ const requestHandler = async (req, res) => {
     let name = String(body.name || '').trim();
     let picture = String(body.picture || '').trim();
     let googleId = String(body.googleId || '').trim();
+
+    // If a real Google OAuth2 access_token is provided from google.accounts.oauth2 popup
+    if (body.accessToken) {
+      try {
+        const uRes = await fetchUrl('https://www.googleapis.com/oauth2/v3/userinfo', {
+          'Authorization': `Bearer ${body.accessToken}`
+        });
+        if (uRes.statusCode === 200) {
+          const uInfo = JSON.parse(uRes.body.toString('utf-8'));
+          if (uInfo.email) email = String(uInfo.email).toLowerCase();
+          if (uInfo.name) name = String(uInfo.name);
+          if (uInfo.picture) picture = String(uInfo.picture);
+          if (uInfo.sub) googleId = String(uInfo.sub);
+        }
+      } catch (e) {}
+    }
 
     // If a real Google Identity Services JWT credential is provided, decode its payload
     if (body.credential) {
