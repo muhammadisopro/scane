@@ -1,0 +1,23 @@
+{
+  "name": "scane",
+  "version": "1.0.0",
+  "description": "SCANE — Premium Movies, TV Series & Interactive English Streaming Platform",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "scane",
+    "streaming",
+    "movies",
+    "series",
+    "english-learning",
+    "subtitles"
+  ],
+  "author": "SCANE",
+  "license": "ISC"
+}

@@ -1,0 +1,725 @@
+{
+  "profiles": {
+    "VerifyUser_1793206129446": {
+      "userId": "VerifyUser_1793206129446",
+      "cefrLevel": "B1",
+      "estimatedScore": null,
+      "isProvisional": true,
+      "onboardingDone": false,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T16:48:49.496Z",
+      "updatedAt": "2026-10-28T16:48:49.496Z"
+    },
+    "TestUser": {
+      "userId": "TestUser",
+      "cefrLevel": "B1",
+      "estimatedScore": null,
+      "isProvisional": true,
+      "onboardingDone": false,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T16:48:58.710Z",
+      "updatedAt": "2026-10-28T16:48:58.710Z"
+    },
+    "Guest": {
+      "userId": "Guest",
+      "cefrLevel": "B1",
+      "estimatedScore": null,
+      "isProvisional": true,
+      "onboardingDone": false,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T16:49:19.658Z",
+      "updatedAt": "2026-10-28T16:49:19.658Z"
+    },
+    "VerifyUser_1793206254362": {
+      "userId": "VerifyUser_1793206254362",
+      "cefrLevel": "B2",
+      "estimatedScore": 58,
+      "isProvisional": false,
+      "onboardingDone": true,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T16:50:54.443Z",
+      "updatedAt": "2026-10-28T16:50:54.452Z"
+    },
+    "VerifyUser_1793207400425": {
+      "userId": "VerifyUser_1793207400425",
+      "cefrLevel": "B2",
+      "estimatedScore": 58,
+      "isProvisional": false,
+      "onboardingDone": true,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T17:10:00.462Z",
+      "updatedAt": "2026-10-28T17:10:00.466Z"
+    },
+    "VerifyUser_1793208319787": {
+      "userId": "VerifyUser_1793208319787",
+      "cefrLevel": "B2",
+      "estimatedScore": 58,
+      "isProvisional": false,
+      "onboardingDone": true,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T17:25:19.814Z",
+      "updatedAt": "2026-10-28T17:25:19.817Z"
+    },
+    "VerifyUser_1793209018769": {
+      "userId": "VerifyUser_1793209018769",
+      "cefrLevel": "B2",
+      "estimatedScore": 58,
+      "isProvisional": false,
+      "onboardingDone": true,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T17:36:58.804Z",
+      "updatedAt": "2026-10-28T17:36:58.809Z"
+    },
+    "VerifyUser_1793209501918": {
+      "userId": "VerifyUser_1793209501918",
+      "cefrLevel": "B2",
+      "estimatedScore": 58,
+      "isProvisional": false,
+      "onboardingDone": true,
+      "goals": [
+        "Filmlarni subtitrsiz tushunish",
+        "Lug‘at boyligini kengaytirish"
+      ],
+      "dailyMinutes": 15,
+      "preferences": {
+        "subMode": "en_uz",
+        "autoPauseOnClick": true,
+        "colorHighlight": true,
+        "subSize": "medium",
+        "subBg": "semi",
+        "speechSpeed": 1
+      },
+      "createdAt": "2026-10-28T17:45:01.974Z",
+      "updatedAt": "2026-10-28T17:45:01.980Z"
+    }
+  },
+  "placementHistory": [
+    {
+      "id": "pl_1793206254451",
+      "userId": "VerifyUser_1793206254362",
+      "score": 15,
+      "maxWeight": 26,
+      "correctCount": 6,
+      "totalQuestions": 8,
+      "estimatedLevel": "B2",
+      "breakdown": {
+        "vocabulary": {
+          "ok": 3,
+          "total": 3
+        },
+        "grammar": {
+          "ok": 1,
+          "total": 2
+        },
+        "comprehension": {
+          "ok": 1,
+          "total": 2
+        },
+        "listening": {
+          "ok": 1,
+          "total": 1
+        }
+      },
+      "completedAt": "2026-10-28T16:50:54.451Z"
+    },
+    {
+      "id": "pl_1793207400465",
+      "userId": "VerifyUser_1793207400425",
+      "score": 15,
+      "maxWeight": 26,
+      "correctCount": 6,
+      "totalQuestions": 8,
+      "estimatedLevel": "B2",
+      "breakdown": {
+        "vocabulary": {
+          "ok": 3,
+          "total": 3
+        },
+        "grammar": {
+          "ok": 1,
+          "total": 2
+        },
+        "comprehension": {
+          "ok": 1,
+          "total": 2
+        },
+        "listening": {
+          "ok": 1,
+          "total": 1
+        }
+      },
+      "completedAt": "2026-10-28T17:10:00.465Z"
+    },
+    {
+      "id": "pl_1793208319816",
+      "userId": "VerifyUser_1793208319787",
+      "score": 15,
+      "maxWeight": 26,
+      "correctCount": 6,
+      "totalQuestions": 8,
+      "estimatedLevel": "B2",
+      "breakdown": {
+        "vocabulary": {
+          "ok": 3,
+          "total": 3
+        },
+        "grammar": {
+          "ok": 1,
+          "total": 2
+        },
+        "comprehension": {
+          "ok": 1,
+          "total": 2
+        },
+        "listening": {
+          "ok": 1,
+          "total": 1
+        }
+      },
+      "completedAt": "2026-10-28T17:25:19.816Z"
+    },
+    {
+      "id": "pl_1793209018809",
+      "userId": "VerifyUser_1793209018769",
+      "score": 15,
+      "maxWeight": 26,
+      "correctCount": 6,
+      "totalQuestions": 8,
+      "estimatedLevel": "B2",
+      "breakdown": {
+        "vocabulary": {
+          "ok": 3,
+          "total": 3
+        },
+        "grammar": {
+          "ok": 1,
+          "total": 2
+        },
+        "comprehension": {
+          "ok": 1,
+          "total": 2
+        },
+        "listening": {
+          "ok": 1,
+          "total": 1
+        }
+      },
+      "completedAt": "2026-10-28T17:36:58.809Z"
+    },
+    {
+      "id": "pl_1793209501980",
+      "userId": "VerifyUser_1793209501918",
+      "score": 15,
+      "maxWeight": 26,
+      "correctCount": 6,
+      "totalQuestions": 8,
+      "estimatedLevel": "B2",
+      "breakdown": {
+        "vocabulary": {
+          "ok": 3,
+          "total": 3
+        },
+        "grammar": {
+          "ok": 1,
+          "total": 2
+        },
+        "comprehension": {
+          "ok": 1,
+          "total": 2
+        },
+        "listening": {
+          "ok": 1,
+          "total": 1
+        }
+      },
+      "completedAt": "2026-10-28T17:45:01.980Z"
+    }
+  ],
+  "vocabulary": [
+    {
+      "id": "voc_1793209506229_kmtv",
+      "userId": "VerifyUser_1793209501918",
+      "word": "actually",
+      "lemma": "actually",
+      "pos": "Adverb (Ravish)",
+      "ipa": "/ˈæk.tʃu.ə.li/",
+      "uzMeaning": "aslida, haqiqatan ham",
+      "uzExplanation": "",
+      "contextSentence": "Second encounter in another scene.",
+      "originalExample": "Actually, we need to figure out the plan.",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "isSeries": false,
+      "season": null,
+      "episode": null,
+      "timestamp": 88,
+      "status": "green",
+      "stability": 5.096,
+      "difficulty": 4.4,
+      "reps": 2,
+      "lapses": 0,
+      "intervalDays": 5,
+      "lastReviewedAt": "2026-10-28T17:45:06.256Z",
+      "nextReviewAt": "2026-11-02T17:45:06.256Z",
+      "createdAt": "2026-10-28T17:45:06.229Z",
+      "updatedAt": "2026-10-28T17:45:06.256Z"
+    },
+    {
+      "id": "voc_1793209022004_epnt",
+      "userId": "VerifyUser_1793209018769",
+      "word": "actually",
+      "lemma": "actually",
+      "pos": "Adverb (Ravish)",
+      "ipa": "/ˈæk.tʃu.ə.li/",
+      "uzMeaning": "aslida, haqiqatan ham",
+      "uzExplanation": "",
+      "contextSentence": "Second encounter in another scene.",
+      "originalExample": "Actually, we need to figure out the plan.",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "isSeries": false,
+      "season": null,
+      "episode": null,
+      "timestamp": 88,
+      "status": "green",
+      "stability": 5.096,
+      "difficulty": 4.4,
+      "reps": 2,
+      "lapses": 0,
+      "intervalDays": 5,
+      "lastReviewedAt": "2026-10-28T17:37:02.023Z",
+      "nextReviewAt": "2026-11-02T17:37:02.023Z",
+      "createdAt": "2026-10-28T17:37:02.004Z",
+      "updatedAt": "2026-10-28T17:37:02.023Z"
+    },
+    {
+      "id": "voc_1793208323520_52xr",
+      "userId": "VerifyUser_1793208319787",
+      "word": "actually",
+      "lemma": "actually",
+      "pos": "Adverb (Ravish)",
+      "ipa": "/ˈæk.tʃu.ə.li/",
+      "uzMeaning": "aslida, haqiqatan ham",
+      "uzExplanation": "",
+      "contextSentence": "Second encounter in another scene.",
+      "originalExample": "Actually, we need to figure out the plan.",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "isSeries": false,
+      "season": null,
+      "episode": null,
+      "timestamp": 88,
+      "status": "green",
+      "stability": 5.096,
+      "difficulty": 4.4,
+      "reps": 2,
+      "lapses": 0,
+      "intervalDays": 5,
+      "lastReviewedAt": "2026-10-28T17:25:23.538Z",
+      "nextReviewAt": "2026-11-02T17:25:23.538Z",
+      "createdAt": "2026-10-28T17:25:23.520Z",
+      "updatedAt": "2026-10-28T17:25:23.538Z"
+    },
+    {
+      "id": "voc_1793207403692_ckmm",
+      "userId": "VerifyUser_1793207400425",
+      "word": "actually",
+      "lemma": "actually",
+      "pos": "Adverb (Ravish)",
+      "ipa": "/ˈæk.tʃu.ə.li/",
+      "uzMeaning": "aslida, haqiqatan ham",
+      "uzExplanation": "",
+      "contextSentence": "Second encounter in another scene.",
+      "originalExample": "Actually, we need to figure out the plan.",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "isSeries": false,
+      "season": null,
+      "episode": null,
+      "timestamp": 88,
+      "status": "green",
+      "stability": 5.096,
+      "difficulty": 4.4,
+      "reps": 2,
+      "lapses": 0,
+      "intervalDays": 5,
+      "lastReviewedAt": "2026-10-28T17:10:03.709Z",
+      "nextReviewAt": "2026-11-02T17:10:03.709Z",
+      "createdAt": "2026-10-28T17:10:03.692Z",
+      "updatedAt": "2026-10-28T17:10:03.709Z"
+    },
+    {
+      "id": "voc_1793206294659_r01x",
+      "userId": "Guest",
+      "word": "shining",
+      "lemma": "shin",
+      "pos": "Noun (Ot)",
+      "ipa": "/ʃɪn/",
+      "uzMeaning": "shining",
+      "uzExplanation": "\"shining\" so‘zining o‘zbekcha ma’nosi: shining.",
+      "contextSentence": "♪ I like stunting, I like shining ♪",
+      "originalExample": "♪ I like stunting, I like shining ♪",
+      "mediaId": "c0e4a28a28b12291cdce15840c9871fb",
+      "mediaTitle": "PULSE",
+      "isSeries": true,
+      "season": 1,
+      "episode": 1,
+      "timestamp": 21,
+      "status": "yellow",
+      "stability": 2,
+      "difficulty": 5,
+      "reps": 1,
+      "lapses": 0,
+      "intervalDays": 2,
+      "lastReviewedAt": "2026-10-28T17:26:10.874Z",
+      "nextReviewAt": "2026-10-30T17:26:10.874Z",
+      "createdAt": "2026-10-28T16:51:34.659Z",
+      "updatedAt": "2026-10-28T17:26:10.874Z"
+    },
+    {
+      "id": "voc_1793206259727_77dg",
+      "userId": "VerifyUser_1793206254362",
+      "word": "actually",
+      "lemma": "actually",
+      "pos": "Adverb (Ravish)",
+      "ipa": "/ˈæk.tʃu.ə.li/",
+      "uzMeaning": "aslida, haqiqatan ham",
+      "uzExplanation": "",
+      "contextSentence": "Second encounter in another scene.",
+      "originalExample": "Actually, we need to figure out the plan.",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "isSeries": false,
+      "season": null,
+      "episode": null,
+      "timestamp": 88,
+      "status": "green",
+      "stability": 5.096,
+      "difficulty": 4.4,
+      "reps": 2,
+      "lapses": 0,
+      "intervalDays": 5,
+      "lastReviewedAt": "2026-10-28T16:50:59.788Z",
+      "nextReviewAt": "2026-11-02T16:50:59.788Z",
+      "createdAt": "2026-10-28T16:50:59.726Z",
+      "updatedAt": "2026-10-28T16:50:59.788Z"
+    }
+  ],
+  "reviewHistory": [
+    {
+      "id": "rev_1793206259752",
+      "userId": "VerifyUser_1793206254362",
+      "vocabId": "voc_1793206259727_77dg",
+      "word": "actually",
+      "rating": 3,
+      "reviewFormat": "enToUz",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T16:50:59.751Z"
+    },
+    {
+      "id": "rev_1793206259788",
+      "userId": "VerifyUser_1793206254362",
+      "vocabId": "voc_1793206259727_77dg",
+      "word": "actually",
+      "rating": 4,
+      "reviewFormat": "fillBlank",
+      "scheduledDays": 5,
+      "newStatus": "green",
+      "reviewedAt": "2026-10-28T16:50:59.788Z"
+    },
+    {
+      "id": "rev_1793207403706",
+      "userId": "VerifyUser_1793207400425",
+      "vocabId": "voc_1793207403692_ckmm",
+      "word": "actually",
+      "rating": 3,
+      "reviewFormat": "enToUz",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T17:10:03.706Z"
+    },
+    {
+      "id": "rev_1793207403709",
+      "userId": "VerifyUser_1793207400425",
+      "vocabId": "voc_1793207403692_ckmm",
+      "word": "actually",
+      "rating": 4,
+      "reviewFormat": "fillBlank",
+      "scheduledDays": 5,
+      "newStatus": "green",
+      "reviewedAt": "2026-10-28T17:10:03.709Z"
+    },
+    {
+      "id": "rev_1793208323534",
+      "userId": "VerifyUser_1793208319787",
+      "vocabId": "voc_1793208323520_52xr",
+      "word": "actually",
+      "rating": 3,
+      "reviewFormat": "enToUz",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T17:25:23.534Z"
+    },
+    {
+      "id": "rev_1793208323538",
+      "userId": "VerifyUser_1793208319787",
+      "vocabId": "voc_1793208323520_52xr",
+      "word": "actually",
+      "rating": 4,
+      "reviewFormat": "fillBlank",
+      "scheduledDays": 5,
+      "newStatus": "green",
+      "reviewedAt": "2026-10-28T17:25:23.538Z"
+    },
+    {
+      "id": "rev_1793208370874",
+      "userId": "Guest",
+      "vocabId": "voc_1793206294659_r01x",
+      "word": "shining",
+      "rating": 3,
+      "reviewFormat": "flashcard",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T17:26:10.874Z"
+    },
+    {
+      "id": "rev_1793209022019",
+      "userId": "VerifyUser_1793209018769",
+      "vocabId": "voc_1793209022004_epnt",
+      "word": "actually",
+      "rating": 3,
+      "reviewFormat": "enToUz",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T17:37:02.019Z"
+    },
+    {
+      "id": "rev_1793209022023",
+      "userId": "VerifyUser_1793209018769",
+      "vocabId": "voc_1793209022004_epnt",
+      "word": "actually",
+      "rating": 4,
+      "reviewFormat": "fillBlank",
+      "scheduledDays": 5,
+      "newStatus": "green",
+      "reviewedAt": "2026-10-28T17:37:02.023Z"
+    },
+    {
+      "id": "rev_1793209506250",
+      "userId": "VerifyUser_1793209501918",
+      "vocabId": "voc_1793209506229_kmtv",
+      "word": "actually",
+      "rating": 3,
+      "reviewFormat": "enToUz",
+      "scheduledDays": 2,
+      "newStatus": "yellow",
+      "reviewedAt": "2026-10-28T17:45:06.250Z"
+    },
+    {
+      "id": "rev_1793209506256",
+      "userId": "VerifyUser_1793209501918",
+      "vocabId": "voc_1793209506229_kmtv",
+      "word": "actually",
+      "rating": 4,
+      "reviewFormat": "fillBlank",
+      "scheduledDays": 5,
+      "newStatus": "green",
+      "reviewedAt": "2026-10-28T17:45:06.256Z"
+    }
+  ],
+  "exerciseAttempts": [
+    {
+      "id": "ex_1793209506271_p7j",
+      "userId": "VerifyUser_1793209501918",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "type": "listening",
+      "score": 85,
+      "maxScore": 100,
+      "topicId": null,
+      "details": "",
+      "createdAt": "2026-10-28T17:45:06.271Z"
+    },
+    {
+      "id": "ex_1793209022031_xmj",
+      "userId": "VerifyUser_1793209018769",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "type": "listening",
+      "score": 85,
+      "maxScore": 100,
+      "topicId": null,
+      "details": "",
+      "createdAt": "2026-10-28T17:37:02.031Z"
+    },
+    {
+      "id": "ex_1793208323549_3xu",
+      "userId": "VerifyUser_1793208319787",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "type": "listening",
+      "score": 85,
+      "maxScore": 100,
+      "topicId": null,
+      "details": "",
+      "createdAt": "2026-10-28T17:25:23.549Z"
+    },
+    {
+      "id": "ex_1793207403716_fby",
+      "userId": "VerifyUser_1793207400425",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "type": "listening",
+      "score": 85,
+      "maxScore": 100,
+      "topicId": null,
+      "details": "",
+      "createdAt": "2026-10-28T17:10:03.716Z"
+    },
+    {
+      "id": "ex_1793206259808_srd",
+      "userId": "VerifyUser_1793206254362",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "type": "listening",
+      "score": 85,
+      "maxScore": 100,
+      "topicId": null,
+      "details": "",
+      "createdAt": "2026-10-28T16:50:59.808Z"
+    }
+  ],
+  "sceneProgress": [
+    {
+      "userId": "VerifyUser_1793206254362",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "lastScore": 85,
+      "completedAt": "2026-10-28T16:50:59.808Z"
+    },
+    {
+      "userId": "VerifyUser_1793207400425",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "lastScore": 85,
+      "completedAt": "2026-10-28T17:10:03.716Z"
+    },
+    {
+      "userId": "VerifyUser_1793208319787",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "lastScore": 85,
+      "completedAt": "2026-10-28T17:25:23.549Z"
+    },
+    {
+      "userId": "VerifyUser_1793209018769",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "lastScore": 85,
+      "completedAt": "2026-10-28T17:37:02.031Z"
+    },
+    {
+      "userId": "VerifyUser_1793209501918",
+      "mediaId": "show_breaking_bad",
+      "mediaTitle": "Breaking Bad",
+      "sceneId": "scene_1",
+      "lastScore": 85,
+      "completedAt": "2026-10-28T17:45:06.271Z"
+    }
+  ],
+  "grammarProgress": {}
+}

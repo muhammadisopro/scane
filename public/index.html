@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>SCANE — Stream Movies, TV Series & Interactive English</title>
+  <meta name="description" content="SCANE — Watch movies and TV series in HD with interactive click-to-translate English subtitles.">
+  <meta property="og:title" content="SCANE — Stream Movies, TV Series & Interactive English">
+  <meta property="og:description" content="Stream movies and TV series with instant 1-click subtitle word & sentence translation.">
+  <meta property="og:type" content="website">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SCANE">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e50914">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23e50914'/><polygon points='38,28 38,72 74,50' fill='white'/></svg>">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- HLS.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+
+  <link rel="stylesheet" href="style.css?v=6.0">
+</head>
+<body>
+
+  <!-- ====================================================
+       NAVBAR — Fixed, Liquid Glass, always visible
+  ==================================================== -->
+  <header class="navbar" id="navbar">
+    <div class="nav-inner">
+
+      <!-- Logo -->
+      <a class="nav-logo" href="#home" onclick="navigate('home')" aria-label="SCANE Home">
+        <div class="logo-play-icon"><i class="fa-solid fa-play"></i></div>
+        <span>SCA<strong>NE</strong></span>
+      </a>
+
+      <!-- Center Nav Links -->
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation">
+        <a class="nav-link active" href="#home" onclick="navigate('home')">Home</a>
+        <a class="nav-link" href="#browse" onclick="navigate('browse')">Browse</a>
+        <a class="nav-link" href="#browse?cat=movies" onclick="navigate('browse?cat=movies')">Movies</a>
+        <a class="nav-link" href="#browse?cat=series" onclick="navigate('browse?cat=series')">TV Series</a>
+
+        <!-- Genres dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-link nav-dropdown-btn" aria-haspopup="true">Genres <i class="fa-solid fa-chevron-down fa-xs"></i></button>
+          <div class="nav-dropdown-panel">
+            <button onclick="navigate('browse?genre=action')"><i class="fa-solid fa-burst"></i> Action</button>
+            <button onclick="navigate('browse?genre=animation')"><i class="fa-solid fa-wand-magic-sparkles"></i> Animation</button>
+            <button onclick="navigate('browse?genre=sci-fi')"><i class="fa-solid fa-rocket"></i> Sci-Fi</button>
+            <button onclick="navigate('browse?genre=comedy')"><i class="fa-solid fa-face-laugh-squint"></i> Comedy</button>
+            <button onclick="navigate('browse?genre=crime')"><i class="fa-solid fa-mask"></i> Crime</button>
+            <button onclick="navigate('browse?genre=drama')"><i class="fa-solid fa-masks-theater"></i> Drama</button>
+            <button onclick="navigate('browse?genre=thriller')"><i class="fa-solid fa-skull"></i> Thriller</button>
+            <button onclick="navigate('browse?genre=horror')"><i class="fa-solid fa-ghost"></i> Horror</button>
+          </div>
+        </div>
+
+        <a class="nav-link nav-learn-link" href="#learn" onclick="navigate('learn')">
+          <i class="fa-solid fa-graduation-cap"></i> Scane English <span class="learn-nav-badge" id="learnNavLevel">B1</span>
+        </a>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="nav-right">
+        <!-- VIP Subscription Pill -->
+        <button class="vip-pill-btn" id="vipNavBtn" title="VIP Subscription" onclick="openSubscriptionModal()">
+          <i class="fa-solid fa-crown"></i> <span id="vipNavLabel">VIP 4K</span>
+        </button>
+
+        <!-- Kids Mode Pill -->
+        <button class="kids-pill-btn" id="kidsModeBtn" title="Kids Safe Mode" onclick="toggleKidsMode()">
+          <i class="fa-solid fa-child-reaching"></i> <span>KIDS</span>
+        </button>
+
+        <!-- Search Icon -->
+        <button class="nav-icon-btn" id="searchToggleBtn" title="Search" aria-label="Search" onclick="toggleSearchOverlay()">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+        <!-- Watchlist -->
+        <button class="nav-icon-btn watchlist-nav-btn" id="watchlistNavBtn" title="Watchlist" aria-label="Watchlist" onclick="openWatchlistModal()">
+          <i class="fa-solid fa-bookmark"></i>
+          <span class="wl-badge" id="wlBadge">0</span>
+        </button>
+
+        <!-- Profile -->
+        <div class="nav-dropdown profile-dropdown">
+          <button class="nav-profile-btn nav-dropdown-btn" aria-label="Profile menu">
+            <div class="profile-avatar">VIP</div>
+            <i class="fa-solid fa-chevron-down fa-xs"></i>
+          </button>
+          <div class="nav-dropdown-panel profile-panel">
+            <div class="profile-info-header">
+              <div class="profile-avatar-lg">VIP</div>
+              <div>
+                <div class="profile-name">Premium</div>
+                <div class="profile-sub">VIP 4K Ultra</div>
+              </div>
+            </div>
+            <hr class="dropdown-divider">
+            <button onclick="navigate('profile')"><i class="fa-solid fa-user-gear"></i> Profile & Settings</button>
+            <button onclick="navigate('learn')"><i class="fa-solid fa-graduation-cap"></i> Scane English</button>
+            <button onclick="openSubscriptionModal()"><i class="fa-solid fa-crown" style="color:var(--gold)"></i> Subscription & Plans</button>
+            <button onclick="openProfileSwitcher()"><i class="fa-solid fa-users"></i> Switch Profile</button>
+            <button onclick="openWatchlistModal()"><i class="fa-solid fa-bookmark"></i> My Watchlist</button>
+            <button onclick="surpriseMe()"><i class="fa-solid fa-shuffle"></i> Surprise Me</button>
+          </div>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="nav-icon-btn mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu" onclick="toggleMobileMenu()">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Panel -->
+    <div class="mobile-nav-panel" id="mobileNavPanel">
+      <a onclick="navigate('home'); closeMobileMenu()"><i class="fa-solid fa-house"></i> Home</a>
+      <a onclick="navigate('browse'); closeMobileMenu()"><i class="fa-solid fa-grid-2"></i> Browse</a>
+      <a onclick="navigate('browse?cat=movies'); closeMobileMenu()"><i class="fa-solid fa-film"></i> Movies</a>
+      <a onclick="navigate('browse?cat=series'); closeMobileMenu()"><i class="fa-solid fa-tv"></i> TV Series</a>
+      <a onclick="navigate('learn'); closeMobileMenu()"><i class="fa-solid fa-graduation-cap"></i> Scane English</a>
+      <a onclick="openWatchlistModal(); closeMobileMenu()"><i class="fa-solid fa-bookmark"></i> Watchlist</a>
+      <a onclick="navigate('profile'); closeMobileMenu()"><i class="fa-solid fa-user-gear"></i> Profile & Settings</a>
+    </div>
+  </header>
+
+  <!-- ====================================================
+       SEARCH OVERLAY — Floating Liquid Glass
+  ==================================================== -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-overlay-inner">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass search-input-icon"></i>
+        <input type="text" id="searchInput" placeholder="Search movies, TV series, or animations..." autocomplete="off" spellcheck="false">
+        <button class="search-mic-btn" id="searchMicBtn" onclick="startVoiceSearch()" title="Voice Search" aria-label="Voice Search"><i class="fa-solid fa-microphone"></i></button>
+        <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()" aria-label="Clear"><i class="fa-solid fa-xmark"></i></button>
+        <button class="search-close-btn" onclick="toggleSearchOverlay()">ESC</button>
+      </div>
+      <div class="search-results-dropdown" id="searchResultsDropdown"></div>
+    </div>
+    <div class="search-overlay-backdrop" onclick="toggleSearchOverlay()"></div>
+  </div>
+
+  <!-- ====================================================
+       MAIN VIEW — Replaced by router on navigation
+  ==================================================== -->
+  <main id="mainView">
+    <div class="page-loading-spinner" id="pageLoadingSpinner">
+      <div class="spinner-ring-lg"></div>
+    </div>
+  </main>
+
+  <!-- ====================================================
+       WATCHLIST MODAL
+  ==================================================== -->
+  <div class="modal-overlay" id="watchlistModal">
+    <div class="modal-panel watchlist-panel" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bookmark"></i> My Watchlist</h3>
+        <button class="modal-close-btn" onclick="closeWatchlistModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="watchlistBody"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       TRAILER MODAL (YouTube Official Trailer)
+  ==================================================== -->
+  <div class="modal-overlay" id="trailerModal" onclick="closeTrailerModal()">
+    <div class="modal-panel trailer-modal-panel" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="trailerModalTitle"><i class="fa-brands fa-youtube"></i> Official Trailer</h3>
+        <button class="modal-close-btn" onclick="closeTrailerModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="trailer-frame-wrap" id="trailerFrameWrap"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       WHO'S WATCHING? (Multi-Profile Switcher)
+  ==================================================== -->
+  <div class="modal-overlay" id="profileSwitcherModal" onclick="closeProfileSwitcher()">
+    <div class="modal-panel profile-switcher-panel" onclick="event.stopPropagation()">
+      <h2 class="ps-title">Who's Watching?</h2>
+      <div class="ps-grid" id="profileSwitcherGrid"></div>
+      <div style="text-align:center;margin-top:22px">
+        <button class="btn-glass-sm" onclick="closeProfileSwitcher(); navigate('profile')"><i class="fa-solid fa-pen"></i> Manage Profiles</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SUBSCRIPTION & BILLING MODAL (LUMEN VIP PASS)
+  ==================================================== -->
+  <div class="modal-overlay" id="subscriptionModal" onclick="closeSubscriptionModal()">
+    <div class="modal-panel sub-modal-panel" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-crown" style="color:var(--gold)"></i> Subscription & Plans</h3>
+        <button class="modal-close-btn" onclick="closeSubscriptionModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="subscriptionModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SCENE ENGLISH — LEVEL & PLACEMENT MODAL
+  ==================================================== -->
+  <div class="modal-overlay" id="learnOnboardingModal" onclick="closeLearnOnboardingModal()">
+    <div class="modal-panel sub-modal-panel" style="width:min(620px,94vw)" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-graduation-cap" style="color:var(--red)"></i> Select Your English Level</h3>
+        <button class="modal-close-btn" onclick="closeLearnOnboardingModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="learnOnboardingBody"></div>
+    </div>
+  </div>
+
+  <!-- Liquid Glass Card Hover Mini-Preview -->
+  <div class="card-hover-preview" id="cardHoverPreview" style="display:none"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js?v=6.0"></script>
+  <script src="learn.js?v=6.0"></script>
+</body>
+</html>
