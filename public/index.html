@@ -25,7 +25,7 @@
   <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=6.0">
+  <link rel="stylesheet" href="style.css?v=7.0">
 </head>
 <body>
 
@@ -94,24 +94,26 @@
         <!-- Profile -->
         <div class="nav-dropdown profile-dropdown">
           <button class="nav-profile-btn nav-dropdown-btn" aria-label="Profile menu">
-            <div class="profile-avatar">VIP</div>
+            <div class="profile-avatar" id="navProfileAvatar">SC</div>
             <i class="fa-solid fa-chevron-down fa-xs"></i>
           </button>
           <div class="nav-dropdown-panel profile-panel">
             <div class="profile-info-header">
-              <div class="profile-avatar-lg">VIP</div>
+              <div class="profile-avatar-lg" id="navProfileAvatarLg">SC</div>
               <div>
-                <div class="profile-name">Premium</div>
-                <div class="profile-sub">VIP 4K Ultra</div>
+                <div class="profile-name" id="navProfileName">Account</div>
+                <div class="profile-sub" id="navProfileSub">Sign In Required</div>
               </div>
             </div>
             <hr class="dropdown-divider">
+            <button id="menuAdminBtn" style="display:none;color:#38bdf8;font-weight:700" onclick="navigate('admin')"><i class="fa-solid fa-shield-halved" style="color:#38bdf8"></i> Admin Panel</button>
             <button onclick="navigate('profile')"><i class="fa-solid fa-user-gear"></i> Profile & Settings</button>
             <button onclick="navigate('learn')"><i class="fa-solid fa-graduation-cap"></i> Scane English</button>
             <button onclick="openSubscriptionModal()"><i class="fa-solid fa-crown" style="color:var(--gold)"></i> Subscription & Plans</button>
-            <button onclick="openProfileSwitcher()"><i class="fa-solid fa-users"></i> Switch Profile</button>
             <button onclick="openWatchlistModal()"><i class="fa-solid fa-bookmark"></i> My Watchlist</button>
             <button onclick="surpriseMe()"><i class="fa-solid fa-shuffle"></i> Surprise Me</button>
+            <hr class="dropdown-divider">
+            <button id="menuLogoutBtn" onclick="logoutAccount()" style="color:#f87171"><i class="fa-solid fa-right-from-bracket" style="color:#f87171"></i> Sign Out</button>
           </div>
         </div>
 
@@ -225,13 +227,35 @@
     </div>
   </div>
 
+  <!-- ====================================================
+       ACCOUNT AUTHENTICATION GATE MODAL (Sign In / Sign Up)
+  ==================================================== -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-panel auth-modal-panel" onclick="event.stopPropagation()">
+      <div class="modal-body" id="authModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       REPORT ISSUE / WRONG AUDIO MODAL
+  ==================================================== -->
+  <div class="modal-overlay" id="reportModal" onclick="closeReportModal()">
+    <div class="modal-panel sub-modal-panel" style="width:min(540px,94vw)" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-flag" style="color:var(--red)"></i> Report Video / Audio Issue</h3>
+        <button class="modal-close-btn" onclick="closeReportModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="reportModalBody"></div>
+    </div>
+  </div>
+
   <!-- Liquid Glass Card Hover Mini-Preview -->
   <div class="card-hover-preview" id="cardHoverPreview" style="display:none"></div>
 
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=6.0"></script>
-  <script src="learn.js?v=6.0"></script>
+  <script src="app.js?v=7.0"></script>
+  <script src="learn.js?v=7.0"></script>
 </body>
 </html>

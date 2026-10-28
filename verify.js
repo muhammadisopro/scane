@@ -255,18 +255,28 @@ function isExactMatch(v, target) {
     }
   }
 
-  // Compute quality/language priority score
+  // Compute quality/language priority score — STRICTLY ENGLISH AUDIO ONLY
   const isTrusted = TRUSTED_AUTHORS.has(authorId);
   const isPureEnglish = !CYR.test(v.title);
-  const hasDubTag = /(дубляж|озвучка|red head sound|rhs|jaskier|lostfilm|hdrezka|hindi|sub indo)/i.test(v.title);
+  const fullMetaText = `${v.title || ''} ${v.description || ''}`;
+  const hasDubTag = /(дубляж|озвучка|профессиональный перевод|многоголосый|red head sound|rhs|jaskier|lostfilm|hdrezka|tvshows|newstudio|coldfilm|baibako|alexfilm|kubik|кубик в кубе|hindi|sub indo)/i.test(v.title);
+  const hasExplicitEnglishTag = /(на английском|in english|в оригинале|оригинальная дорожка|english original|with english subtitles|с русскими субтитрами|с субтитрами)/i.test(fullMetaText);
+
+  if (hasDubTag && !hasExplicitEnglishTag) {
+    return { ok: false, why: 'dubbed audio' };
+  }
+  if (!isTrusted && !isPureEnglish && !hasExplicitEnglishTag) {
+    return { ok: false, why: 'cyrillic title without explicit english indicator' };
+  }
+
   let score = 0;
   if (isTrusted) score += 1000;
   if (parsed.strict) score += 600;
-  if (isPureEnglish) score += 400;
+  if (isPureEnglish) score += 450;
+  if (hasExplicitEnglishTag) score += 350;
   if (matchedEn) score += 250;
   if (matchedRu) score += 100;
   if (parsed.year && target.year && parsed.year === target.year) score += 80;
-  if (hasDubTag) score -= 90;
   if (target.runtime && dur > 0) {
     const diffPct = Math.abs(dur - target.runtime) / target.runtime;
     score += Math.max(0, Math.round((1 - diffPct) * 60));
@@ -298,11 +308,12 @@ async function findMovie(tmdbId) {
 
   const queries = [
     `${m.title} (movie, ${year || ''})`,
+    `${m.title} ${year || ''} in english`,
     `${m.title} ${year || ''}`,
   ];
   if (ruM && ruM.title && norm(ruM.title) !== norm(m.title)) {
-    queries.push(`${ruM.title} ${m.title} ${year || ''}`);
-    queries.push(`${ruM.title} ${year || ''}`);
+    queries.push(`${ruM.title} на английском`);
+    queries.push(`${ruM.title} ${m.title} в оригинале`);
   }
 
   const batches = await Promise.all(queries.map(q => rutubeSearch(q, 2)));
@@ -364,11 +375,11 @@ async function findShowEpisodes(tmdbId) {
   ];
   for (const sn of seasons.slice(0, 5)) {
     queries.push(`${s.name} season ${sn.season_number} episode`);
-    if (ruName) queries.push(`${ruName} ${sn.season_number} сезон серия`);
+    if (ruName) queries.push(`${ruName} ${sn.season_number} сезон на английском`);
   }
   if (ruName) {
-    queries.push(`${ruName} / ${s.name}`);
-    queries.push(`${ruName} 1 сезон 1 серия`);
+    queries.push(`${ruName} / ${s.name} на английском`);
+    queries.push(`${s.name} in english`);
   }
 
   // Run queries in fast parallel batches of 5

@@ -39,9 +39,80 @@ const SHOW_META_FILE = path.join(__dirname, 'show_meta_cache.json');
 let showMetaCache = {};
 try { if (fs.existsSync(SHOW_META_FILE)) showMetaCache = JSON.parse(fs.readFileSync(SHOW_META_FILE, 'utf-8')); } catch (e) {}
 
+const crypto = require('crypto');
+const os = require('os');
 const STREAM_CACHE_FILE = path.join(__dirname, 'stream_cache.json');
 let streamCache = {};
 try { if (fs.existsSync(STREAM_CACHE_FILE)) streamCache = JSON.parse(fs.readFileSync(STREAM_CACHE_FILE, 'utf-8')); } catch (e) {}
+
+// ============================================================
+// PLATFORM DB: AUTHENTICATION (USERS) & COMPLAINTS (REPORTS)
+// ============================================================
+const PLATFORM_DB_FILE = path.join(process.env.VERCEL ? os.tmpdir() : __dirname, 'platform_db.json');
+function hashPassword(pw) {
+  return crypto.createHash('sha256').update(String(pw || '') + '_scane_salt').digest('hex');
+}
+let platformDb = {
+  users: [
+    {
+      id: 'usr_admin',
+      name: 'SCANE Admin',
+      email: 'admin@scane.tv',
+      username: 'admin',
+      passwordHash: hashPassword('admin123'),
+      role: 'admin',
+      plan: 'vip',
+      createdAt: '2026-10-28T00:00:00Z'
+    }
+  ],
+  sessions: {}, // token -> userId
+  reports: []   // { id, videoId, mediaId, title, reason, details, userEmail, status, createdAt, suggestedAlt }
+};
+
+function loadPlatformDb() {
+  try {
+    if (fs.existsSync(PLATFORM_DB_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(PLATFORM_DB_FILE, 'utf-8'));
+      if (Array.isArray(saved.users) && saved.users.length) platformDb.users = saved.users;
+      if (saved.sessions) platformDb.sessions = saved.sessions;
+      if (Array.isArray(saved.reports)) platformDb.reports = saved.reports;
+    }
+  } catch (e) {}
+  // Always ensure default admin exists
+  if (!platformDb.users.some(u => u.username === 'admin' || u.email === 'admin@scane.tv')) {
+    platformDb.users.unshift({
+      id: 'usr_admin',
+      name: 'SCANE Admin',
+      email: 'admin@scane.tv',
+      username: 'admin',
+      passwordHash: hashPassword('admin123'),
+      role: 'admin',
+      plan: 'vip',
+      createdAt: new Date().toISOString()
+    });
+  }
+}
+function savePlatformDb() {
+  try {
+    fs.writeFileSync(PLATFORM_DB_FILE, JSON.stringify(platformDb, null, 2));
+  } catch (e) {}
+}
+loadPlatformDb();
+
+function sanitizeUser(u) {
+  if (!u) return null;
+  const { passwordHash, ...safe } = u;
+  return safe;
+}
+
+function getAuthUserFromReq(req, parsedUrl) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim() || (parsedUrl.query && parsedUrl.query.token) || '';
+  if (!token) return null;
+  const uid = platformDb.sessions[token];
+  if (!uid) return null;
+  return platformDb.users.find(u => u.id === uid) || null;
+}
 
 function loadSeriesCache() {
   try {
@@ -354,8 +425,8 @@ const requestHandler = async (req, res) => {
   const pathname = parsedUrl.pathname;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -1217,6 +1288,245 @@ const requestHandler = async (req, res) => {
     else if (cat === 'series') list = list.filter(x => x.is_series);
 
     return sendJson(res, 200, { total: list.length, items: list.slice(0, 60) });
+  }
+
+  // ==========================================
+  // API: AUTHENTICATION (REGISTER, LOGIN, ME, LOGOUT)
+  // ==========================================
+  if (pathname === '/api/auth/register' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    if (!name || !email || password.length < 4) {
+      return sendJson(res, 400, { error: 'Please enter your name, email, and a password (min 4 characters).' });
+    }
+    if (platformDb.users.some(u => u.email.toLowerCase() === email || u.username === email)) {
+      return sendJson(res, 409, { error: 'An account with this email already exists. Please sign in.' });
+    }
+    const newUser = {
+      id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name,
+      email,
+      username: email.split('@')[0],
+      passwordHash: hashPassword(password),
+      role: email === 'admin@scane.tv' ? 'admin' : 'user',
+      plan: 'free',
+      createdAt: new Date().toISOString()
+    };
+    platformDb.users.push(newUser);
+    const token = 'tok_' + crypto.randomBytes(18).toString('hex');
+    platformDb.sessions[token] = newUser.id;
+    savePlatformDb();
+    return sendJson(res, 200, { user: sanitizeUser(newUser), token });
+  }
+
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    const loginId = String(body.email || body.username || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const user = platformDb.users.find(u => u.email.toLowerCase() === loginId || (u.username && u.username.toLowerCase() === loginId));
+    if (!user || user.passwordHash !== hashPassword(password)) {
+      return sendJson(res, 401, { error: 'Invalid email/username or password.' });
+    }
+    const token = 'tok_' + crypto.randomBytes(18).toString('hex');
+    platformDb.sessions[token] = user.id;
+    savePlatformDb();
+    return sendJson(res, 200, { user: sanitizeUser(user), token });
+  }
+
+  if (pathname === '/api/auth/me') {
+    const user = getAuthUserFromReq(req, parsedUrl);
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    return sendJson(res, 200, { user: sanitizeUser(user) });
+  }
+
+  // ==========================================
+  // API: REPORTS / COMPLAINTS + AUTO ENGLISH STREAM FINDER
+  // ==========================================
+  if (pathname === '/api/reports') {
+    loadMovies();
+    if (req.method === 'GET') {
+      return sendJson(res, 200, { reports: platformDb.reports });
+    }
+    if (req.method === 'POST') {
+      const body = await readBodyJson(req);
+      const videoId = String(body.videoId || '').trim();
+      const mediaId = String(body.mediaId || videoId).trim();
+      const reason = String(body.reason || 'russian_audio').trim();
+      const details = String(body.details || '').trim();
+      const user = getAuthUserFromReq(req, parsedUrl);
+      const item = rawMoviesDb.find(m => m.id === videoId) || allCatalog.find(m => m.id === mediaId);
+      const title = body.title || (item ? item.title : videoId);
+
+      // Search Rutube for English-original alternative streams for this title
+      let alternatives = [];
+      try {
+        const cleanTitle = (item ? (item.clean_title || item.title) : title).replace(/\(S\d+.*\)/i, '').trim();
+        const year = item?.year || '';
+        const q = item?.is_series && item?.season && item?.episode
+          ? `${cleanTitle} season ${item.season} episode ${item.episode}`
+          : `${cleanTitle} (${year || 'movie'})`;
+        const results = await verify.rutubeSearch(q, 2);
+        alternatives = results
+          .filter(v => v && v.id && v.id !== videoId && (v.duration || 0) > 600)
+          .filter(v => {
+            const isTrusted = v.author && verify.TRUSTED_AUTHORS.has(v.author.id);
+            const noCyr = !/[а-яёА-ЯЁ]/.test(v.title || '');
+            const hasEn = /(in english|на английском|в оригинале|оригинал|субтитр)/i.test(`${v.title} ${v.description || ''}`);
+            return isTrusted || noCyr || hasEn;
+          })
+          .slice(0, 5)
+          .map(v => ({
+            id: v.id,
+            title: v.title,
+            durationMin: Math.round((v.duration || 0) / 60),
+            author: v.author ? v.author.name : 'Rutube',
+            trusted: !!(v.author && verify.TRUSTED_AUTHORS.has(v.author.id))
+          }));
+      } catch (e) {}
+
+      const report = {
+        id: 'rep_' + Date.now().toString(36),
+        videoId,
+        mediaId,
+        title,
+        reason,
+        details,
+        userName: user ? user.name : (body.userName || 'User'),
+        userEmail: user ? user.email : (body.userEmail || 'guest'),
+        status: 'open',
+        alternatives,
+        createdAt: new Date().toISOString()
+      };
+      platformDb.reports.unshift(report);
+      savePlatformDb();
+      return sendJson(res, 200, { ok: true, report, alternatives });
+    }
+  }
+
+  // ==========================================
+  // API: ADMIN PANEL (OVERVIEW, REPLACE STREAM, CATALOG, USERS)
+  // ==========================================
+  if (pathname === '/api/admin/overview') {
+    loadMovies();
+    return sendJson(res, 200, {
+      stats: {
+        totalUsers: platformDb.users.length,
+        vipUsers: platformDb.users.filter(u => u.plan === 'vip').length,
+        totalVideos: rawMoviesDb.length,
+        totalMovies: moviesOnly.length,
+        totalSeries: showsList.length,
+        cachedStreams: Object.keys(streamCache).length,
+        openReports: platformDb.reports.filter(r => r.status === 'open').length,
+        totalReports: platformDb.reports.length
+      },
+      reports: platformDb.reports.slice(0, 100),
+      users: platformDb.users.map(sanitizeUser)
+    });
+  }
+
+  if (pathname === '/api/admin/replace-stream' && req.method === 'POST') {
+    loadMovies();
+    const body = await readBodyJson(req);
+    const oldId = String(body.oldVideoId || '').trim();
+    const newId = String(body.newVideoId || '').trim().replace(/^.*\/video\/([a-z0-9]+)\/?.*$/i, '$1');
+    const reportId = body.reportId || '';
+    if (!oldId || !newId) return sendJson(res, 400, { error: 'Both oldVideoId and newVideoId are required' });
+
+    const idx = rawMoviesDb.findIndex(m => m.id === oldId);
+    if (idx === -1) return sendJson(res, 404, { error: 'Video not found in catalog' });
+
+    rawMoviesDb[idx].id = newId;
+    if (body.newTitle) rawMoviesDb[idx].title = body.newTitle;
+
+    // Try to resolve & cache the new stream's master m3u8 immediately
+    try {
+      const sData = await resolveRutubeStream(newId);
+      if (sData && sData.m3u8) {
+        const r2 = await fetchUrl(sData.m3u8);
+        const masterText = r2.body.toString('utf-8');
+        if (masterText.includes('#EXTM3U')) {
+          streamCache[newId] = { d: sData.duration || 0, m: masterText };
+          try { fs.writeFileSync(STREAM_CACHE_FILE, JSON.stringify(streamCache)); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+
+    persistDb();
+    loadMovies(true);
+
+    if (reportId) {
+      const rep = platformDb.reports.find(r => r.id === reportId);
+      if (rep) { rep.status = 'resolved'; rep.resolvedWith = newId; savePlatformDb(); }
+    }
+    return sendJson(res, 200, { ok: true, oldId, newId, item: rawMoviesDb[idx] });
+  }
+
+  if (pathname === '/api/admin/report-status' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    const rep = platformDb.reports.find(r => r.id === body.reportId);
+    if (!rep) return sendJson(res, 404, { error: 'Report not found' });
+    rep.status = body.status || 'resolved';
+    savePlatformDb();
+    return sendJson(res, 200, { ok: true, report: rep });
+  }
+
+  if (pathname === '/api/admin/delete-item' && req.method === 'POST') {
+    loadMovies();
+    const body = await readBodyJson(req);
+    const id = String(body.id || '').trim();
+    const before = rawMoviesDb.length;
+    rawMoviesDb = rawMoviesDb.filter(m => m.id !== id && m.show_key !== id);
+    if (rawMoviesDb.length !== before) {
+      persistDb();
+      loadMovies(true);
+    }
+    platformDb.reports.forEach(r => { if (r.videoId === id || r.mediaId === id) r.status = 'resolved'; });
+    savePlatformDb();
+    return sendJson(res, 200, { ok: true, removed: before - rawMoviesDb.length });
+  }
+
+  if (pathname === '/api/admin/add-item' && req.method === 'POST') {
+    loadMovies();
+    const body = await readBodyJson(req);
+    const videoId = String(body.videoId || '').trim().replace(/^.*\/video\/([a-z0-9]+)\/?.*$/i, '$1');
+    const title = String(body.title || '').trim();
+    if (!videoId || !title) return sendJson(res, 400, { error: 'Title and Rutube Video ID are required' });
+    if (rawMoviesDb.some(m => m.id === videoId)) {
+      return sendJson(res, 409, { error: 'This video ID is already in the catalog' });
+    }
+    const newItem = {
+      id: videoId,
+      title,
+      clean_title: title,
+      raw_title: `${title} (${body.isSeries ? 'series' : 'movie'}, ${body.year || '2024'})`,
+      year: String(body.year || '2024'),
+      rating: parseFloat(body.rating) || 8.0,
+      duration_min: parseFloat(body.durationMin) || 110,
+      poster: body.poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&q=60',
+      backdrop: body.backdrop || body.poster || '',
+      overview: body.overview || 'Stream in HD with interactive English subtitles on SCANE.',
+      genres: body.genres ? String(body.genres).split(',').map(s => s.trim()).filter(Boolean) : ['Drama'],
+      is_series: !!body.isSeries,
+      season: body.isSeries ? (parseInt(body.season, 10) || 1) : undefined,
+      episode: body.isSeries ? (parseInt(body.episode, 10) || 1) : undefined,
+      verified: true
+    };
+    rawMoviesDb.unshift(newItem);
+    persistDb();
+    loadMovies(true);
+    return sendJson(res, 200, { ok: true, item: newItem });
+  }
+
+  if (pathname === '/api/admin/user-update' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    const u = platformDb.users.find(x => x.id === body.userId);
+    if (!u) return sendJson(res, 404, { error: 'User not found' });
+    if (body.plan) u.plan = body.plan;
+    if (body.role) u.role = body.role;
+    savePlatformDb();
+    return sendJson(res, 200, { ok: true, user: sanitizeUser(u) });
   }
 
   // ==========================================

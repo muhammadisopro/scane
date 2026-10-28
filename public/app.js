@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
   initWatchlistBadge();
   updateNavProfile();
+  initAuthSystem();
   applySubSize();
   window.addEventListener('hashchange', route);
   route();
@@ -68,6 +69,7 @@ function route() {
     case 'actor':         renderActorPage(parts[1]); break;
     case 'hub':           renderCollectionHubPage(parts[1]); break;
     case 'profile':       renderProfilePage(); break;
+    case 'admin':         renderAdminPage(params); break;
     default:              renderHome();
   }
 }
@@ -884,6 +886,9 @@ async function renderMoviePage(id) {
             <button class="btn-glass ${isFav?'fav-active':''}" id="favBtn_${id}" onclick='toggleFav(${safeM})' title="Favorite">
               <i class="fa-${isFav?'solid':'regular'} fa-heart" style="color:${isFav?'var(--red)':'inherit'}"></i>
             </button>
+            <button class="btn-glass" onclick="openReportModal('${esc(id)}','${esc(id)}','${esc(movie.title)}')" title="Report Russian audio or stream issue">
+              <i class="fa-solid fa-flag" style="color:#f87171"></i> Report Issue
+            </button>
             <div class="star-rater" title="Your Rating">
               ${[1,2,3,4,5].map(st=>`<i class="fa-${st<=uStar?'solid':'regular'} fa-star" onclick="setUserRating('${esc(id)}',${st})"></i>`).join('')}
             </div>
@@ -979,6 +984,9 @@ async function renderShowPage(showId) {
             </button>` : ''}
             <button class="btn-glass ${isFav?'fav-active':''}" id="favBtn_${show.id}" onclick='toggleFav(${safeWl})' title="Favorite">
               <i class="fa-${isFav?'solid':'regular'} fa-heart" style="color:${isFav?'var(--red)':'inherit'}"></i>
+            </button>
+            <button class="btn-glass" onclick="openReportModal('${esc(playEp ? playEp.id : show.id)}','${esc(show.id)}','${esc(show.title)}')" title="Report Russian audio or episode issue">
+              <i class="fa-solid fa-flag" style="color:#f87171"></i> Report Issue
             </button>
             <div class="star-rater" title="Your Rating">
               ${[1,2,3,4,5].map(st=>`<i class="fa-${st<=uStar?'solid':'regular'} fa-star" onclick="setUserRating('${esc(show.id)}',${st})"></i>`).join('')}
@@ -1255,6 +1263,10 @@ async function renderPlayerPage(videoId, params = {}) {
         <span class="pm-item-val" id="pvSleepLabel">Off</span>
       </button>
       <div class="pm-divider"></div>
+      <button class="pm-item" onclick="closePlayerMoreMenu();openReportFromPlayer()">
+        <span class="pm-item-left"><i class="fa-solid fa-flag" style="color:#f87171"></i> Report Issue / Wrong Audio</span>
+        <span class="pm-item-val" style="color:#f87171">Fix</span>
+      </button>
       <button class="pm-item" onclick="closePlayerMoreMenu();shareWatchPartyLink()">
         <span class="pm-item-left"><i class="fa-solid fa-users-viewfinder"></i> Watch Party</span>
         <span class="pm-item-val">Share Link</span>
@@ -3394,4 +3406,582 @@ function saveState() {
     localStorage.setItem('lf_muted', String(STATE.muted));
     localStorage.setItem('lf_speed', String(STATE.speed));
   } catch(e) {}
+}
+
+// ============================================================
+// ACCOUNT AUTHENTICATION SYSTEM (Sign In / Sign Up Gate)
+// ============================================================
+function initAuthSystem() {
+  try {
+    const savedUser = JSON.parse(localStorage.getItem('scane_auth_user') || 'null');
+    const savedToken = localStorage.getItem('scane_auth_token') || '';
+    if (savedUser && savedToken) {
+      STATE.authUser = savedUser;
+      STATE.authToken = savedToken;
+      syncAuthUi();
+      return;
+    }
+  } catch (e) {}
+  STATE.authUser = null;
+  STATE.authToken = '';
+  syncAuthUi();
+  openAuthModal('login', true);
+}
+
+function syncAuthUi() {
+  const u = STATE.authUser;
+  const av1 = document.getElementById('navProfileAvatar');
+  const av2 = document.getElementById('navProfileAvatarLg');
+  const nm = document.getElementById('navProfileName');
+  const sub = document.getElementById('navProfileSub');
+  const admBtn = document.getElementById('menuAdminBtn');
+  const outBtn = document.getElementById('menuLogoutBtn');
+
+  if (u) {
+    const initials = (u.name || 'U').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    if (av1) av1.textContent = u.role === 'admin' ? 'ADM' : initials;
+    if (av2) av2.textContent = u.role === 'admin' ? 'ADM' : initials;
+    if (nm) nm.textContent = u.name;
+    if (sub) sub.textContent = u.role === 'admin' ? 'Administrator · VIP' : (u.plan === 'vip' ? 'SCANE VIP 4K' : u.email);
+    if (admBtn) admBtn.style.display = u.role === 'admin' ? 'flex' : 'none';
+    if (outBtn) {
+      outBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket" style="color:#f87171"></i> Sign Out`;
+      outBtn.onclick = () => logoutAccount();
+    }
+  } else {
+    if (av1) av1.textContent = 'IN';
+    if (av2) av2.textContent = 'IN';
+    if (nm) nm.textContent = 'Not Signed In';
+    if (sub) sub.textContent = 'Click to Sign In';
+    if (admBtn) admBtn.style.display = 'none';
+    if (outBtn) {
+      outBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket" style="color:#38bdf8"></i> Sign In / Register`;
+      outBtn.onclick = () => openAuthModal('login', false);
+    }
+  }
+}
+
+function openAuthModal(mode = 'login', requiredGate = false) {
+  const modal = document.getElementById('authModal');
+  const body = document.getElementById('authModalBody');
+  if (!modal || !body) return;
+  modal.classList.add('open');
+
+  const isReg = mode === 'register';
+  body.innerHTML = `
+    <div class="auth-card-head">
+      <div class="nav-logo" style="justify-content:center;margin-bottom:10px;pointer-events:none">
+        <div class="logo-play-icon"><i class="fa-solid fa-play"></i></div>
+        <span>SCA<strong>NE</strong></span>
+      </div>
+      <h2>${isReg ? 'Create Your Account' : 'Welcome Back to SCANE'}</h2>
+      <p>${isReg ? 'Sign up to stream movies in HD with interactive English subtitles.' : 'Sign in to access your watchlist, progress, and interactive subtitles.'}</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab ${!isReg ? 'active' : ''}" onclick="openAuthModal('login', ${requiredGate})">Sign In</button>
+      <button class="auth-tab ${isReg ? 'active' : ''}" onclick="openAuthModal('register', ${requiredGate})">Create Account</button>
+    </div>
+
+    <form class="auth-form" onsubmit="event.preventDefault();submitAuthForm('${mode}')">
+      ${isReg ? `
+        <div class="auth-field">
+          <label>Full Name</label>
+          <input type="text" class="pay-input" id="authNameInp" placeholder="e.g. Muhammadiso" required>
+        </div>
+      ` : ''}
+      <div class="auth-field">
+        <label>Email or Username</label>
+        <input type="text" class="pay-input" id="authEmailInp" placeholder="${isReg ? 'you@example.com' : 'email or admin'}" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" class="pay-input" id="authPassInp" placeholder="••••••••" required>
+      </div>
+      <div id="authErrorMsg" class="auth-error-msg" style="display:none"></div>
+      <button type="submit" class="btn-red" style="width:100%;justify-content:center;margin-top:6px" id="authSubmitBtn">
+        <i class="fa-solid fa-${isReg ? 'user-plus' : 'right-to-bracket'}"></i> ${isReg ? 'Create Account' : 'Sign In'}
+      </button>
+    </form>
+
+    <div class="auth-quick-box">
+      <div style="font-size:11.5px;color:var(--text-m);margin-bottom:8px;text-align:center">Quick 1-Click Access:</div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn-glass-sm" style="flex:1;justify-content:center" onclick="quickDemoLogin('admin')">
+          <i class="fa-solid fa-shield-halved" style="color:#38bdf8"></i> Admin Account
+        </button>
+        <button type="button" class="btn-glass-sm" style="flex:1;justify-content:center" onclick="quickDemoLogin('user')">
+          <i class="fa-solid fa-user" style="color:#4ade80"></i> Demo Member
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function submitAuthForm(mode) {
+  const errEl = document.getElementById('authErrorMsg');
+  const btn = document.getElementById('authSubmitBtn');
+  const name = document.getElementById('authNameInp')?.value?.trim() || '';
+  const email = document.getElementById('authEmailInp')?.value?.trim() || '';
+  const password = document.getElementById('authPassInp')?.value || '';
+
+  if (errEl) errEl.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Please wait...`; }
+
+  try {
+    const ep = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const res = await fetch(ep, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      if (errEl) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; }
+      if (btn) { btn.disabled = false; btn.textContent = mode === 'register' ? 'Create Account' : 'Sign In'; }
+      return;
+    }
+    completeAuthSuccess(data.user, data.token);
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Connection error. Please try again.'; errEl.style.display = 'block'; }
+    if (btn) { btn.disabled = false; btn.textContent = mode === 'register' ? 'Create Account' : 'Sign In'; }
+  }
+}
+
+async function quickDemoLogin(type) {
+  if (type === 'admin') {
+    const emailInp = document.getElementById('authEmailInp');
+    const passInp = document.getElementById('authPassInp');
+    if (emailInp) emailInp.value = 'admin@scane.tv';
+    if (passInp) passInp.value = 'admin123';
+    await submitAuthForm('login');
+  } else {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'member@scane.tv', password: 'user123' })
+    });
+    if (res.ok) {
+      const d = await res.json();
+      completeAuthSuccess(d.user, d.token);
+    } else {
+      const r2 = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'SCANE Member', email: 'member@scane.tv', password: 'user123' })
+      });
+      const d2 = await r2.json();
+      if (d2.user) completeAuthSuccess(d2.user, d2.token);
+    }
+  }
+}
+
+function completeAuthSuccess(user, token) {
+  STATE.authUser = user;
+  STATE.authToken = token;
+  localStorage.setItem('scane_auth_user', JSON.stringify(user));
+  localStorage.setItem('scane_auth_token', token);
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.remove('open');
+  syncAuthUi();
+  showToast(`👋 Welcome, ${user.name}!`);
+}
+
+function logoutAccount() {
+  STATE.authUser = null;
+  STATE.authToken = '';
+  localStorage.removeItem('scane_auth_user');
+  localStorage.removeItem('scane_auth_token');
+  syncAuthUi();
+  showToast('Signed out of your account');
+  openAuthModal('login', true);
+}
+
+// ============================================================
+// REPORT ISSUE / WRONG AUDIO MODAL & AUTO-FIX STREAM
+// ============================================================
+function openReportFromPlayer() {
+  const vidId = PV.videoId || '';
+  const showId = PV.showId || vidId;
+  const title = document.getElementById('pvShowTitle')?.textContent || 'Current Video';
+  openReportModal(vidId, showId, title);
+}
+
+function openReportModal(videoId, mediaId, title) {
+  const modal = document.getElementById('reportModal');
+  const body = document.getElementById('reportModalBody');
+  if (!modal || !body) return;
+  modal.classList.add('open');
+
+  body.innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--text-m)">Reporting Title:</div>
+      <div style="font-family:var(--ff-h);font-size:17px;font-weight:800;color:#fff">${esc(title)}</div>
+    </div>
+    <div class="auth-field" style="margin-bottom:12px">
+      <label>What is the issue?</label>
+      <select class="pay-input" id="repReasonSel" style="background:rgba(15,18,28,0.95);color:#fff">
+        <option value="russian_audio">🔊 Audio is in Russian (Not English original)</option>
+        <option value="stream_error">📺 Video stream does not load / HTTP error</option>
+        <option value="subtitle_sync">📝 Subtitles are out of sync or missing</option>
+        <option value="wrong_video">🎬 Wrong movie or episode</option>
+      </select>
+    </div>
+    <div class="auth-field" style="margin-bottom:14px">
+      <label>Additional Details (Optional)</label>
+      <input type="text" class="pay-input" id="repDetailsInp" placeholder="e.g. Episode 2 is dubbed in Russian...">
+    </div>
+    <button class="btn-red" id="repSubmitBtn" style="width:100%;justify-content:center" onclick="submitVideoReport('${esc(videoId)}','${esc(mediaId)}','${esc(title)}')">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> Submit Report & Find English Stream
+    </button>
+    <div id="repResultBox" style="margin-top:14px"></div>
+  `;
+}
+
+function closeReportModal() {
+  const modal = document.getElementById('reportModal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function submitVideoReport(videoId, mediaId, title) {
+  const reason = document.getElementById('repReasonSel')?.value || 'russian_audio';
+  const details = document.getElementById('repDetailsInp')?.value || '';
+  const btn = document.getElementById('repSubmitBtn');
+  const box = document.getElementById('repResultBox');
+  if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Searching English streams...`; }
+
+  try {
+    const res = await fetch('/api/reports', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${STATE.authToken || ''}`
+      },
+      body: JSON.stringify({
+        videoId,
+        mediaId,
+        title,
+        reason,
+        details,
+        userName: STATE.authUser?.name || 'User',
+        userEmail: STATE.authUser?.email || 'user'
+      })
+    });
+    const data = await res.json();
+    if (btn) { btn.innerHTML = `<i class="fa-solid fa-check"></i> Report Sent to Admin`; }
+    showToast('✅ Report submitted!');
+
+    const alts = data.alternatives || [];
+    if (box) {
+      if (alts.length > 0) {
+        box.innerHTML = `
+          <div style="padding:12px;border-radius:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12)">
+            <div style="font-size:12.5px;font-weight:700;color:#38bdf8;margin-bottom:8px">
+              <i class="fa-solid fa-bolt"></i> Found ${alts.length} Alternative English Stream(s):
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${alts.map(a => `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,0.35)">
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.title)}</div>
+                    <div style="font-size:11px;color:var(--text-m)">${a.durationMin} min · ${esc(a.author)} ${a.trusted ? '· ✅ Verified EN' : ''}</div>
+                  </div>
+                  <button class="btn-red-sm" onclick="switchToReportedAlternative('${esc(videoId)}','${esc(a.id)}','${esc(data.report?.id || '')}')">
+                    Use Stream
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        box.innerHTML = `<div style="padding:10px;border-radius:10px;background:rgba(74,222,128,0.12);color:#4ade80;font-size:12.5px">
+          ✓ Your report has been logged in the Admin Panel for immediate review.
+        </div>`;
+      }
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Try Again'; }
+  }
+}
+
+async function switchToReportedAlternative(oldId, newId, reportId) {
+  showToast('🔄 Switching to alternative English stream...');
+  try {
+    await fetch('/api/admin/replace-stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldVideoId: oldId, newVideoId: newId, reportId })
+    });
+    closeReportModal();
+    showToast('✅ Switched to new English stream!');
+    navigate(`player/${newId}`);
+  } catch (e) {
+    showToast('Could not switch stream');
+  }
+}
+
+// ============================================================
+// FULL ADMIN PANEL PAGE (#admin)
+// ============================================================
+let _adminTab = 'reports';
+async function renderAdminPage(params = {}) {
+  document.title = 'Admin Panel — SCANE';
+  if (params.tab) _adminTab = params.tab;
+  setMain(`<div class="page-loading-spinner"><div class="spinner-ring-lg"></div></div>`);
+
+  try {
+    const data = await api('/api/admin/overview');
+    const st = data.stats || {};
+    const reports = data.reports || [];
+    const users = data.users || [];
+
+    setMain(`<div class="se-clean-page">
+      <section class="se-glass-hero">
+        <div class="se-glass-hero-content">
+          <div class="se-glass-pill"><i class="fa-solid fa-shield-halved"></i> SCANE Administration</div>
+          <h1>Platform <span>Admin Panel</span></h1>
+          <p>Manage user complaints, replace Russian/broken video streams in 1 click, add new movies, and manage accounts.</p>
+
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-val">${st.totalVideos || 0}</div>
+              <div class="admin-stat-lbl">Total Videos (${st.totalMovies || 0} Movies · ${st.totalSeries || 0} Series)</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-val" style="color:#f87171">${st.openReports || 0}</div>
+              <div class="admin-stat-lbl">Open Reports / Complaints</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-val" style="color:#38bdf8">${st.cachedStreams || 0}</div>
+              <div class="admin-stat-lbl">Pre-Cached CDN Streams</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-val" style="color:#4ade80">${st.totalUsers || 0}</div>
+              <div class="admin-stat-lbl">Registered Accounts</div>
+            </div>
+          </div>
+
+          <div class="se-hero-bar" style="margin-top:18px">
+            <div class="se-level-Segment">
+              <button class="se-seg-btn ${_adminTab === 'reports' ? 'active' : ''}" onclick="navigate('admin?tab=reports')">
+                <i class="fa-solid fa-flag"></i> Complaints (${st.openReports || 0})
+              </button>
+              <button class="se-seg-btn ${_adminTab === 'catalog' ? 'active' : ''}" onclick="navigate('admin?tab=catalog')">
+                <i class="fa-solid fa-film"></i> Catalog Manager
+              </button>
+              <button class="se-seg-btn ${_adminTab === 'users' ? 'active' : ''}" onclick="navigate('admin?tab=users')">
+                <i class="fa-solid fa-users"></i> Accounts (${st.totalUsers || 0})
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="se-clean-body" id="adminTabBody">
+        ${_adminTab === 'reports' ? buildAdminReportsHtml(reports) : ''}
+        ${_adminTab === 'catalog' ? buildAdminCatalogHtml() : ''}
+        ${_adminTab === 'users' ? buildAdminUsersHtml(users) : ''}
+      </div>
+      ${buildFooter()}
+    </div>`);
+
+    if (_adminTab === 'catalog') {
+      adminSearchCatalog('');
+    }
+  } catch (e) {
+    setMain(`<div class="wl-empty"><p>Failed to load Admin Panel: ${esc(e.message)}</p></div>`);
+  }
+}
+
+function buildAdminReportsHtml(reports) {
+  if (!reports.length) {
+    return `<div class="se-practice-card" style="text-align:center;padding:48px 24px">
+      <i class="fa-solid fa-circle-check" style="font-size:38px;color:#4ade80;margin-bottom:12px"></i>
+      <h3 style="font-family:var(--ff-h);font-size:20px;margin-bottom:6px">Zero Open Complaints</h3>
+      <p style="color:var(--text-m);font-size:14px">Any movie or episode reported by users for Russian audio or stream issues will appear here.</p>
+    </div>`;
+  }
+  const reasonLabels = {
+    russian_audio: '🔊 Russian Audio (Needs English)',
+    stream_error: '📺 Stream Error',
+    subtitle_sync: '📝 Subtitle Issue',
+    wrong_video: '🎬 Wrong Video'
+  };
+  return `<div style="display:flex;flex-direction:column;gap:14px">
+    ${reports.map(r => `
+      <div class="se-practice-card" style="border-left:3px solid ${r.status === 'open' ? '#ef4444' : '#4ade80'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+              <span class="badge" style="background:${r.status === 'open' ? 'rgba(239,68,68,0.2)' : 'rgba(74,222,128,0.2)'};color:${r.status === 'open' ? '#f87171' : '#4ade80'}">${r.status.toUpperCase()}</span>
+              <span class="badge">${esc(reasonLabels[r.reason] || r.reason)}</span>
+              <span style="font-size:12px;color:var(--text-m)">by ${esc(r.userName || r.userEmail)} · ${new Date(r.createdAt).toLocaleString()}</span>
+            </div>
+            <h3 style="font-family:var(--ff-h);font-size:18px;font-weight:800;margin-bottom:4px">${esc(r.title)}</h3>
+            <div style="font-size:12px;color:var(--text-m)">Video ID: <code>${esc(r.videoId)}</code> ${r.details ? `· Note: "${esc(r.details)}"` : ''}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-glass-sm" onclick="navigate('player/${esc(r.videoId)}')"><i class="fa-solid fa-play"></i> Test Video</button>
+            <button class="btn-glass-sm" onclick="adminPromptReplaceStream('${esc(r.videoId)}','${esc(r.id)}','${esc(r.title)}')"><i class="fa-solid fa-link"></i> Replace Video ID</button>
+            <button class="btn-glass-sm" style="color:#f87171" onclick="adminDeleteItem('${esc(r.videoId)}')"><i class="fa-solid fa-trash"></i> Remove Movie</button>
+            ${r.status === 'open' ? `<button class="btn-red-sm" onclick="adminResolveReport('${esc(r.id)}')"><i class="fa-solid fa-check"></i> Mark Resolved</button>` : ''}
+          </div>
+        </div>
+        ${(r.alternatives && r.alternatives.length) ? `
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
+            <div style="font-size:12px;color:#38bdf8;font-weight:700;margin-bottom:8px">Suggested English Streams on Rutube:</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${r.alternatives.map(a => `
+                <button class="btn-glass-sm" onclick="switchToReportedAlternative('${esc(r.videoId)}','${esc(a.id)}','${esc(r.id)}')">
+                  <i class="fa-solid fa-wand-magic-sparkles" style="color:#38bdf8"></i> Use: ${esc(a.title.slice(0, 42))} (${a.durationMin}m)
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function buildAdminCatalogHtml() {
+  return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:24px">
+      <div class="se-practice-card">
+        <h3 style="font-family:var(--ff-h);font-size:18px;margin-bottom:12px"><i class="fa-solid fa-plus-circle" style="color:var(--red)"></i> Add New Movie or Episode</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input type="text" class="pay-input" id="admAddTitle" placeholder="Title (e.g. Interstellar)">
+          <input type="text" class="pay-input" id="admAddVid" placeholder="Rutube URL or 32-char ID">
+          <input type="text" class="pay-input" id="admAddYear" placeholder="Year (e.g. 2024)">
+          <input type="text" class="pay-input" id="admAddPoster" placeholder="Poster Image URL">
+        </div>
+        <button class="btn-red-sm" style="margin-top:12px" onclick="adminAddItemSubmit()">
+          <i class="fa-solid fa-plus"></i> Add to Catalog
+        </button>
+      </div>
+
+      <div class="se-practice-card">
+        <h3 style="font-family:var(--ff-h);font-size:18px;margin-bottom:12px"><i class="fa-solid fa-magnifying-glass" style="color:#38bdf8"></i> Search & Fix Catalog</h3>
+        <input type="text" class="pay-input" id="admCatSearch" placeholder="Search movie or series title to edit/delete..." oninput="adminSearchCatalog(this.value)">
+        <div style="font-size:12px;color:var(--text-m);margin-top:8px">Click "Replace Stream ID" on any item to swap its Rutube stream ID, or "Delete" to remove it.</div>
+      </div>
+    </div>
+    <div id="admCatalogList" style="display:flex;flex-direction:column;gap:10px"></div>
+  `;
+}
+
+async function adminSearchCatalog(q) {
+  const listEl = document.getElementById('admCatalogList');
+  if (!listEl) return;
+  try {
+    const data = await api(`/api/movies?limit=25&q=${encodeURIComponent(q || '')}`);
+    const items = data.items || [];
+    const ph = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&q=60';
+    listEl.innerHTML = items.map(m => `
+      <div class="se-practice-card" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="${esc(m.poster || ph)}" style="width:42px;height:60px;object-fit:cover;border-radius:8px" onerror="this.onerror=null;this.src='${ph}'">
+          <div>
+            <div style="font-weight:700;font-size:15px">${esc(m.title)} ${m.year ? `<span style="color:var(--text-m);font-size:12px">(${m.year})</span>` : ''}</div>
+            <div style="font-size:12px;color:var(--text-m)">ID: <code>${esc(m.id)}</code> · ${m.is_series ? 'TV Series' : 'Movie'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-glass-sm" onclick="openMedia('${esc(m.id)}',${!!m.is_series})"><i class="fa-solid fa-eye"></i> View</button>
+          <button class="btn-glass-sm" onclick="adminPromptReplaceStream('${esc(m.id)}','','${esc(m.title)}')"><i class="fa-solid fa-pen"></i> Replace Stream ID</button>
+          <button class="btn-glass-sm" style="color:#f87171" onclick="adminDeleteItem('${esc(m.id)}')"><i class="fa-solid fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {}
+}
+
+function buildAdminUsersHtml(users) {
+  return `<div style="display:flex;flex-direction:column;gap:10px">
+    ${users.map(u => `
+      <div class="se-practice-card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:15px">${esc(u.name)} <span class="badge" style="margin-left:6px">${esc(u.role.toUpperCase())}</span> <span class="badge badge-imdb">${esc((u.plan || 'free').toUpperCase())}</span></div>
+          <div style="font-size:12px;color:var(--text-m)">${esc(u.email)} · Joined ${new Date(u.createdAt || Date.now()).toLocaleDateString()}</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-glass-sm" onclick="adminToggleUser('${esc(u.id)}','plan','${u.plan === 'vip' ? 'free' : 'vip'}')">
+            <i class="fa-solid fa-crown" style="color:var(--gold)"></i> ${u.plan === 'vip' ? 'Set Free' : 'Grant VIP 4K'}
+          </button>
+          <button class="btn-glass-sm" onclick="adminToggleUser('${esc(u.id)}','role','${u.role === 'admin' ? 'user' : 'admin'}')">
+            <i class="fa-solid fa-shield-halved" style="color:#38bdf8"></i> ${u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+          </button>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+async function adminPromptReplaceStream(oldId, reportId, title) {
+  const newId = prompt(`Enter new Rutube Video ID or URL for "${title}":`, oldId);
+  if (!newId || newId.trim() === oldId) return;
+  const res = await fetch('/api/admin/replace-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ oldVideoId: oldId, newVideoId: newId.trim(), reportId })
+  });
+  const d = await res.json();
+  if (d.ok) {
+    showToast('✅ Stream ID updated!');
+    renderAdminPage({ tab: _adminTab });
+  } else {
+    showToast('❌ ' + (d.error || 'Failed to update'));
+  }
+}
+
+async function adminResolveReport(reportId) {
+  await fetch('/api/admin/report-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reportId, status: 'resolved' })
+  });
+  showToast('✅ Report marked resolved');
+  renderAdminPage({ tab: 'reports' });
+}
+
+async function adminDeleteItem(id) {
+  if (!confirm('Remove this title from the catalog?')) return;
+  await fetch('/api/admin/delete-item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+  showToast('🗑️ Title removed from catalog');
+  renderAdminPage({ tab: _adminTab });
+}
+
+async function adminAddItemSubmit() {
+  const title = document.getElementById('admAddTitle')?.value?.trim();
+  const videoId = document.getElementById('admAddVid')?.value?.trim();
+  const year = document.getElementById('admAddYear')?.value?.trim() || '2024';
+  const poster = document.getElementById('admAddPoster')?.value?.trim() || '';
+  if (!title || !videoId) { showToast('Please enter Title and Rutube ID'); return; }
+  const res = await fetch('/api/admin/add-item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, videoId, year, poster })
+  });
+  const d = await res.json();
+  if (d.ok) {
+    showToast(`✅ Added "${title}" to catalog!`);
+    renderAdminPage({ tab: 'catalog' });
+  } else {
+    showToast('❌ ' + (d.error || 'Could not add item'));
+  }
+}
+
+async function adminToggleUser(userId, field, val) {
+  await fetch('/api/admin/user-update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, [field]: val })
+  });
+  showToast('✅ Account updated');
+  renderAdminPage({ tab: 'users' });
 }

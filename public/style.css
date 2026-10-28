@@ -1048,6 +1048,47 @@ video::cue { opacity: 0 !important; visibility: hidden !important; color: transp
 }
 .chp-btn-icon:hover,.chp-btn-icon.active{background:rgba(255,255,255,0.22);color:var(--gold)}
 
+/* iOS Liquid Glass Auth Gate & Admin Panel */
+.auth-modal-panel{
+  width:min(440px,94vw);padding:26px 24px;border-radius:24px;
+  background:rgba(16, 20, 32, 0.86);
+  backdrop-filter:blur(40px) saturate(200%);
+  -webkit-backdrop-filter:blur(40px) saturate(200%);
+  border:1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:0 32px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.auth-card-head{text-align:center;margin-bottom:18px}
+.auth-card-head h2{font-family:var(--ff-h);font-size:22px;font-weight:800;margin-bottom:6px;color:#fff}
+.auth-card-head p{font-size:13px;color:var(--text-m);line-height:1.45}
+.auth-tabs{
+  display:flex;gap:4px;padding:4px;border-radius:14px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;
+}
+.auth-tab{
+  flex:1;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;color:var(--text-m);transition:var(--tr);
+}
+.auth-tab.active{background:#fff;color:#090b10;box-shadow:0 4px 14px rgba(0,0,0,0.3)}
+.auth-form{display:flex;flex-direction:column;gap:12px}
+.auth-field{display:flex;flex-direction:column;gap:5px}
+.auth-field label{font-size:12px;font-weight:600;color:var(--text-m)}
+.auth-error-msg{
+  padding:8px 12px;border-radius:10px;background:rgba(239,68,68,0.16);
+  border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12.5px;
+}
+.auth-quick-box{
+  margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);
+}
+
+.admin-stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px;
+}
+.admin-stat-card{
+  padding:14px 16px;border-radius:16px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+}
+.admin-stat-val{font-family:var(--ff-h);font-size:26px;font-weight:900;color:#fff}
+.admin-stat-lbl{font-size:12px;color:var(--text-m);margin-top:2px}
+
 @media(max-width:1024px){
   .se-glass-hero,.se-clean-body,.actor-hero,.hub-hero,.profile-hero,.profile-stats,.profile-section{padding-left:22px;padding-right:22px}
   .se-glass-hero{margin:12px 16px 0}

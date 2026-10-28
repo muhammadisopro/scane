@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "usr_admin",
+      "name": "SCANE Admin",
+      "email": "admin@scane.tv",
+      "username": "admin",
+      "passwordHash": "098a14772582c2298dd2f707ec2a4bc16d2c197bba6de9a25df52ddb30dfe147",
+      "role": "admin",
+      "plan": "vip",
+      "createdAt": "2026-10-28T00:00:00Z"
+    }
+  ],
+  "sessions": {
+    "tok_8746b956167eef34a144d06afad3ffcaf7b1": "usr_admin"
+  },
+  "reports": []
+}
