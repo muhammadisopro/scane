@@ -39,6 +39,10 @@ const SHOW_META_FILE = path.join(__dirname, 'show_meta_cache.json');
 let showMetaCache = {};
 try { if (fs.existsSync(SHOW_META_FILE)) showMetaCache = JSON.parse(fs.readFileSync(SHOW_META_FILE, 'utf-8')); } catch (e) {}
 
+const STREAM_CACHE_FILE = path.join(__dirname, 'stream_cache.json');
+let streamCache = {};
+try { if (fs.existsSync(STREAM_CACHE_FILE)) streamCache = JSON.parse(fs.readFileSync(STREAM_CACHE_FILE, 'utf-8')); } catch (e) {}
+
 function loadSeriesCache() {
   try {
     if (fs.existsSync(SERIES_CACHE_FILE)) {
@@ -1228,13 +1232,40 @@ const requestHandler = async (req, res) => {
 
     try {
       const movieInfo = rawMoviesDb.find(m => m.id === videoId);
-      const streamData = await resolveRutubeStream(videoId);
+      let streamData = null;
+      let proxiedStreamUrl = null;
 
-      if (!streamData.m3u8) {
-        throw new Error('Video oqimi topilmadi');
+      try {
+        streamData = await resolveRutubeStream(videoId);
+        if (streamData && streamData.m3u8) {
+          proxiedStreamUrl = `/api/proxy-m3u8?url=${encodeURIComponent(streamData.m3u8)}`;
+        }
+      } catch (resolveErr) {
+        // Fallback to pre-resolved CDN stream cache (bypasses US/EU datacenter geo-blocks on /api/play/options)
+        if (streamCache[videoId] && streamCache[videoId].m) {
+          streamData = {
+            title: movieInfo ? movieInfo.title : 'SCANE Stream',
+            duration: streamCache[videoId].d || (movieInfo?.duration_min ? movieInfo.duration_min * 60 : 5400),
+            m3u8: 'cached'
+          };
+          proxiedStreamUrl = `/api/cached-m3u8/${encodeURIComponent(videoId)}`;
+        } else {
+          throw resolveErr;
+        }
       }
 
-      const proxiedStreamUrl = `/api/proxy-m3u8?url=${encodeURIComponent(streamData.m3u8)}`;
+      if (!proxiedStreamUrl && streamCache[videoId] && streamCache[videoId].m) {
+        streamData = {
+          title: movieInfo ? movieInfo.title : 'SCANE Stream',
+          duration: streamCache[videoId].d || (movieInfo?.duration_min ? movieInfo.duration_min * 60 : 5400),
+          m3u8: 'cached'
+        };
+        proxiedStreamUrl = `/api/cached-m3u8/${encodeURIComponent(videoId)}`;
+      }
+
+      if (!proxiedStreamUrl) {
+        throw new Error('Video oqimi topilmadi');
+      }
 
       // Inglizcha subtitr
       let subtitleUrl = null;
@@ -1337,6 +1368,34 @@ const requestHandler = async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
       return res.end('Subtitr yuklanmadi: ' + err.message);
     }
+  }
+
+  // ==========================================
+  // PROXY: CACHED MASTER M3U8 (For Cloud Datacenters)
+  // ==========================================
+  if (pathname.startsWith('/api/cached-m3u8/')) {
+    const videoId = decodeURIComponent(pathname.replace('/api/cached-m3u8/', '').trim());
+    const entry = streamCache[videoId];
+    if (!entry || !entry.m) {
+      res.writeHead(404, { 'Access-Control-Allow-Origin': '*' });
+      return res.end('Cached stream topilmadi');
+    }
+    const modifiedLines = entry.m.split(/\r?\n/).map(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return line;
+      if (trimmed.includes('.m3u8')) {
+        return `/api/proxy-m3u8?url=${encodeURIComponent(trimmed)}`;
+      }
+      return `/api/proxy-ts?url=${encodeURIComponent(trimmed)}`;
+    });
+    res.writeHead(200, {
+      'Content-Type': 'application/vnd.apple.mpegurl; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Range'
+    });
+    return res.end(modifiedLines.join('\n'));
   }
 
   // ==========================================

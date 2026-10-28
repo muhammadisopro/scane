@@ -9,6 +9,7 @@
           "movies.json",
           "series_enriched.json",
           "show_meta_cache.json",
+          "stream_cache.json",
           "translation_cache.json",
           "scene_english.js",
           "public/**"
