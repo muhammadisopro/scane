@@ -3420,7 +3420,7 @@ function initAuthSystem() {
   STATE.authUser = null;
   STATE.authToken = '';
   syncAuthUi();
-  openAuthModal('login', true);
+  openAuthModal('register', true);
 }
 
 function syncAuthUi() {
@@ -3486,8 +3486,8 @@ function openAuthModal(mode = 'login', requiredGate = false) {
         </div>
       ` : ''}
       <div class="auth-field">
-        <label>Email or Username</label>
-        <input type="text" class="pay-input" id="authEmailInp" placeholder="${isReg ? 'you@example.com' : 'email or admin'}" required>
+        <label>Email Address</label>
+        <input type="email" class="pay-input" id="authEmailInp" placeholder="you@example.com" required>
       </div>
       <div class="auth-field">
         <label>Password</label>
@@ -3498,18 +3498,6 @@ function openAuthModal(mode = 'login', requiredGate = false) {
         <i class="fa-solid fa-${isReg ? 'user-plus' : 'right-to-bracket'}"></i> ${isReg ? 'Create Account' : 'Sign In'}
       </button>
     </form>
-
-    <div class="auth-quick-box">
-      <div style="font-size:11.5px;color:var(--text-m);margin-bottom:8px;text-align:center">Quick 1-Click Access:</div>
-      <div style="display:flex;gap:8px">
-        <button type="button" class="btn-glass-sm" style="flex:1;justify-content:center" onclick="quickDemoLogin('admin')">
-          <i class="fa-solid fa-shield-halved" style="color:#38bdf8"></i> Admin Account
-        </button>
-        <button type="button" class="btn-glass-sm" style="flex:1;justify-content:center" onclick="quickDemoLogin('user')">
-          <i class="fa-solid fa-user" style="color:#4ade80"></i> Demo Member
-        </button>
-      </div>
-    </div>
   `;
 }
 
@@ -3540,34 +3528,6 @@ async function submitAuthForm(mode) {
   } catch (e) {
     if (errEl) { errEl.textContent = 'Connection error. Please try again.'; errEl.style.display = 'block'; }
     if (btn) { btn.disabled = false; btn.textContent = mode === 'register' ? 'Create Account' : 'Sign In'; }
-  }
-}
-
-async function quickDemoLogin(type) {
-  if (type === 'admin') {
-    const emailInp = document.getElementById('authEmailInp');
-    const passInp = document.getElementById('authPassInp');
-    if (emailInp) emailInp.value = 'admin@scane.tv';
-    if (passInp) passInp.value = 'admin123';
-    await submitAuthForm('login');
-  } else {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'member@scane.tv', password: 'user123' })
-    });
-    if (res.ok) {
-      const d = await res.json();
-      completeAuthSuccess(d.user, d.token);
-    } else {
-      const r2 = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'SCANE Member', email: 'member@scane.tv', password: 'user123' })
-      });
-      const d2 = await r2.json();
-      if (d2.user) completeAuthSuccess(d2.user, d2.token);
-    }
   }
 }
 
@@ -3721,6 +3681,11 @@ async function switchToReportedAlternative(oldId, newId, reportId) {
 // ============================================================
 let _adminTab = 'reports';
 async function renderAdminPage(params = {}) {
+  if (!STATE.authUser || STATE.authUser.role !== 'admin') {
+    showToast('🔒 Admin access required');
+    navigate('home');
+    return;
+  }
   document.title = 'Admin Panel — SCANE';
   if (params.tab) _adminTab = params.tab;
   setMain(`<div class="page-loading-spinner"><div class="spinner-ring-lg"></div></div>`);
