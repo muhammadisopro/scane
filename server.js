@@ -76,6 +76,7 @@ function loadPlatformDb() {
       if (Array.isArray(saved.users) && saved.users.length) platformDb.users = saved.users;
       if (saved.sessions) platformDb.sessions = saved.sessions;
       if (Array.isArray(saved.reports)) platformDb.reports = saved.reports;
+      if (saved.googleClientId) platformDb.googleClientId = saved.googleClientId;
     }
   } catch (e) {}
   // Always ensure default admin exists
@@ -1339,6 +1340,76 @@ const requestHandler = async (req, res) => {
     const user = getAuthUserFromReq(req, parsedUrl);
     if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
     return sendJson(res, 200, { user: sanitizeUser(user) });
+  }
+
+  if (pathname === '/api/auth/google-config') {
+    return sendJson(res, 200, {
+      googleClientId: process.env.GOOGLE_CLIENT_ID || platformDb.googleClientId || ''
+    });
+  }
+
+  if (pathname === '/api/admin/google-config' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    platformDb.googleClientId = String(body.googleClientId || '').trim();
+    savePlatformDb();
+    return sendJson(res, 200, { ok: true, googleClientId: platformDb.googleClientId });
+  }
+
+  if (pathname === '/api/auth/google' && req.method === 'POST') {
+    const body = await readBodyJson(req);
+    let email = String(body.email || '').trim().toLowerCase();
+    let name = String(body.name || '').trim();
+    let picture = String(body.picture || '').trim();
+    let googleId = String(body.googleId || '').trim();
+
+    // If a real Google Identity Services JWT credential is provided, decode its payload
+    if (body.credential) {
+      try {
+        const parts = String(body.credential).split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+          if (payload.email) email = String(payload.email).toLowerCase();
+          if (payload.name) name = String(payload.name);
+          if (payload.picture) picture = String(payload.picture);
+          if (payload.sub) googleId = String(payload.sub);
+        }
+      } catch (e) {
+        return sendJson(res, 400, { error: 'Invalid Google credential token.' });
+      }
+    }
+
+    if (!email || !email.includes('@')) {
+      return sendJson(res, 400, { error: 'Please provide a valid Google email address.' });
+    }
+    if (!name) {
+      name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    let user = platformDb.users.find(u => u.email.toLowerCase() === email);
+    if (!user) {
+      user = {
+        id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name,
+        email,
+        username: email.split('@')[0],
+        passwordHash: hashPassword('google_oauth_' + (googleId || email)),
+        authProvider: 'google',
+        avatar: picture || '',
+        role: email === 'admin@scane.tv' ? 'admin' : 'user',
+        plan: 'free',
+        createdAt: new Date().toISOString()
+      };
+      platformDb.users.push(user);
+    } else {
+      user.authProvider = 'google';
+      if (picture) user.avatar = picture;
+      if (name && (!user.name || user.name === user.username)) user.name = name;
+    }
+
+    const token = 'tok_' + crypto.randomBytes(18).toString('hex');
+    platformDb.sessions[token] = user.id;
+    savePlatformDb();
+    return sendJson(res, 200, { user: sanitizeUser(user), token });
   }
 
   // ==========================================
